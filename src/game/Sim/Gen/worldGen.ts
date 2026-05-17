@@ -1,6 +1,7 @@
 import type { SimWorld } from '../world'
 import { spawnWarden } from '../world'
 import { Terrain, TERRAIN_COST } from '@/shared/constants'
+import { spawnPack } from '../Critters/spawn'
 
 // Tiny placeholder world gen: scatter forest, stone, and water based on rng;
 // G010 replaces this with proper biome generation.
@@ -33,4 +34,26 @@ export function generateWorld(sim: SimWorld): void {
   spawnWarden(sim, cx - 1, cy, 0xe8ece8)
   spawnWarden(sim, cx, cy, 0xa8d08d)
   spawnWarden(sim, cx + 1, cy, 0xe07a5f)
+  scatterWildPacks(sim, cx, cy)
+}
+
+function scatterWildPacks(sim: SimWorld, awayX: number, awayY: number): void {
+  // 5 small packs of wild critters, kept clear of the spawn radius.
+  const speciesPool = ['spritmoth', 'tindercub', 'loamfin', 'brackboar', 'mosskit', 'ferroquill']
+  for (let p = 0; p < 5; p++) {
+    let tx = 0
+    let ty = 0
+    for (let tries = 0; tries < 20; tries++) {
+      tx = sim.rng.int(sim.map.width)
+      ty = sim.rng.int(sim.map.height)
+      const dx = tx - awayX
+      const dy = ty - awayY
+      if (dx * dx + dy * dy < 10 * 10) continue
+      const tileIdx = ty * sim.map.width + tx
+      if (sim.map.cost[tileIdx] === 0) continue
+      break
+    }
+    const key = speciesPool[sim.rng.int(speciesPool.length)]!
+    spawnPack(sim, key, tx, ty, 2 + sim.rng.int(2), p + 1)
+  }
 }

@@ -1,8 +1,9 @@
 import { defineQuery, hasComponent } from 'bitecs'
 import type { SimWorld } from '../world'
-import { Faction as FactionComp, Job, Pawn, TilePos } from '../components'
+import { Faction as FactionComp, Job, Pawn, Skills, TilePos } from '../components'
 import { Faction, Terrain } from '@/shared/constants'
 import { addComponent } from 'bitecs'
+import { Behavior } from './behavior'
 
 export enum JobKind {
   None = 0,
@@ -34,6 +35,7 @@ export function makeJobSystem(hooks: JobsHooks) {
     for (let i = 0; i < eids.length; i++) {
       const eid = eids[i]!
       if (FactionComp.id[eid] !== Faction.Player) continue
+      if (Pawn.behavior[eid] === Behavior.Sleeping || Pawn.behavior[eid] === Behavior.Eating) continue
       if (!hasComponent(sim.ecs, Job, eid)) {
         addComponent(sim.ecs, Job, eid)
         Job.kind[eid] = JobKind.None
@@ -42,7 +44,7 @@ export function makeJobSystem(hooks: JobsHooks) {
 
       switch (Job.kind[eid] as JobKind) {
         case JobKind.None:
-          assignNearestDesignation(sim, eid, hooks)
+          assignBestDesignation(sim, eid, hooks)
           break
         case JobKind.Chop:
         case JobKind.Mine:
@@ -53,18 +55,23 @@ export function makeJobSystem(hooks: JobsHooks) {
   }
 }
 
-function assignNearestDesignation(sim: SimWorld, eid: number, hooks: JobsHooks): void {
+function assignBestDesignation(sim: SimWorld, eid: number, hooks: JobsHooks): void {
   if (sim.designations.size === 0) return
   const fromX = TilePos.tx[eid]!
   const fromY = TilePos.ty[eid]!
-  let best: { key: number; tx: number; ty: number; kind: 'chop' | 'mine'; distSq: number } | null = null
+  const construct = hasSkill(sim, eid) ? Skills.construct[eid]! : 0
+  const mine = hasSkill(sim, eid) ? Skills.mine[eid]! : 0
+  let best: { key: number; tx: number; ty: number; kind: 'chop' | 'mine'; score: number } | null = null
   for (const [key, d] of sim.designations) {
     if (isAlreadyTargeted(sim, key, eid)) continue
     const dx = d.tx - fromX
     const dy = d.ty - fromY
     const distSq = dx * dx + dy * dy
-    if (best === null || distSq < best.distSq) {
-      best = { key, tx: d.tx, ty: d.ty, kind: d.kind, distSq }
+    // Higher = better. Skill adds ~1 unit per level; distance penalty grows with sqrt.
+    const skillBonus = d.kind === 'chop' ? construct : mine
+    const score = skillBonus - Math.sqrt(distSq) * 0.1
+    if (best === null || score > best.score) {
+      best = { key, tx: d.tx, ty: d.ty, kind: d.kind, score }
     }
   }
   if (!best) return
@@ -73,6 +80,10 @@ function assignNearestDesignation(sim: SimWorld, eid: number, hooks: JobsHooks):
   Job.state[eid] = JobState.Moving
   Job.progress[eid] = 0
   hooks.requestPath(eid, fromX, fromY, best.tx, best.ty)
+}
+
+function hasSkill(sim: SimWorld, eid: number): boolean {
+  return hasComponent(sim.ecs, Skills, eid)
 }
 
 function progressJob(sim: SimWorld, eid: number): void {
@@ -92,11 +103,15 @@ function progressJob(sim: SimWorld, eid: number): void {
   const need = designation.kind === 'chop' ? WORK_TICKS_CHOP : WORK_TICKS_MINE
   if (Job.progress[eid]! < need) return
 
-  // Work done. Convert tile and drop a "resource picked" event.
+  // Work done. Convert tile, award skill XP (capped at 20), and drop an event.
   const i = designation.ty * sim.map.width + designation.tx
   sim.map.terrain[i] = designation.kind === 'chop' ? Terrain.Grass : Terrain.Dirt
   sim.map.cost[i] = designation.kind === 'chop' ? 10 : 12
   sim.designations.delete(key)
+  if (hasComponent(sim.ecs, Skills, eid)) {
+    if (designation.kind === 'chop' && (Skills.construct[eid] ?? 0) < 20) Skills.construct[eid]!++
+    if (designation.kind === 'mine' && (Skills.mine[eid] ?? 0) < 20) Skills.mine[eid]!++
+  }
   sim.events.push(
     `${designation.kind === 'chop' ? 'Chopped' : 'Mined'} at (${designation.tx},${designation.ty}).`,
   )

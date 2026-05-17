@@ -1,10 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useUiStore, type SpeedSetting } from '@/app/stores/uiStore'
 import { listSaves, saveGame, loadGame } from '@/game/Sim/Saves/store'
 import type { SaveMeta } from '@/game/Sim/Saves/schema'
+import { dayOf, phaseOf } from '@/game/Sim/systems/time'
 
 const SPEEDS: SpeedSetting[] = [0, 1, 2, 4]
 const DEFAULT_SLOT = 'autosave'
+
+const PHASE_ICON: Record<'dawn' | 'day' | 'dusk' | 'night', string> = {
+  dawn: '☼',
+  day: '☀',
+  dusk: '☽',
+  night: '✦',
+}
 
 export function HUD() {
   const speed = useUiStore((s) => s.speed)
@@ -12,10 +20,24 @@ export function HUD() {
   const [saves, setSaves] = useState<SaveMeta[]>([])
   const [showLoad, setShowLoad] = useState(false)
   const [status, setStatus] = useState<string>('')
+  const [clock, setClock] = useState<{ day: number; phase: 'dawn' | 'day' | 'dusk' | 'night' }>({ day: 1, phase: 'day' })
+  const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (showLoad) listSaves().then(setSaves).catch(() => undefined)
   }, [showLoad])
+
+  useEffect(() => {
+    function readClock() {
+      const sim = (window as unknown as { __crittermoorGame?: { sim?: { tick: number } } }).__crittermoorGame?.sim
+      if (sim) setClock({ day: dayOf(sim as never), phase: phaseOf(sim as never) })
+    }
+    readClock()
+    timerRef.current = window.setInterval(readClock, 500)
+    return () => {
+      if (timerRef.current !== null) clearInterval(timerRef.current)
+    }
+  }, [])
 
   function onSave() {
     const game = (window as unknown as { __crittermoorGame?: { sim?: unknown } }).__crittermoorGame
@@ -48,6 +70,11 @@ export function HUD() {
     <div className="hud">
       <div className="hud-top panel">
         <div className="hud-title">Crittermoor</div>
+        <div className="hud-clock" aria-live="polite">
+          <span className="phase-icon" aria-hidden>{PHASE_ICON[clock.phase]}</span>
+          <span>Day {clock.day}</span>
+          <span className="phase-label">{clock.phase}</span>
+        </div>
         <div className="speed-group" role="group" aria-label="Game speed">
           {SPEEDS.map((s) => (
             <button
@@ -64,6 +91,9 @@ export function HUD() {
         <div className="hud-actions">
           <button onClick={onSave}>Save</button>
           <button onClick={() => setShowLoad((v) => !v)}>Load</button>
+          <button onClick={() => (window as unknown as { __crittermoorTestBattle?: () => void }).__crittermoorTestBattle?.()}>
+            Test Battle
+          </button>
         </div>
       </div>
 
@@ -98,6 +128,9 @@ export function HUD() {
         .hud-top { pointer-events:auto; position:absolute; top:12px; left:50%; transform:translateX(-50%);
           display:flex; gap:18px; align-items:center; padding:8px 14px; }
         .hud-title { color:var(--accent); font-weight:600; letter-spacing:0.04em; }
+        .hud-clock { display:flex; gap:8px; align-items:center; color:var(--text); font-size:13px; }
+        .hud-clock .phase-icon { font-size:16px; color:var(--accent); }
+        .hud-clock .phase-label { color:var(--text-dim); text-transform:capitalize; }
         .speed-group { display:flex; gap:6px; }
         .speed-group button { padding:4px 10px; font-size:13px; min-width:36px; }
         .speed-group button.active { border-color:var(--accent); color:var(--accent); }

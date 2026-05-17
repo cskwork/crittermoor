@@ -19,6 +19,7 @@ export interface SpeciesDef {
   workTags: readonly string[]
   spriteKey: string
   flavor: string
+  nocturnal?: boolean
 }
 
 export const SPECIES: readonly SpeciesDef[] = [
@@ -32,6 +33,7 @@ export const SPECIES: readonly SpeciesDef[] = [
     workTags: ['scout', 'haul-light'],
     spriteKey: 'critter/spritmoth',
     flavor: 'A pale moth that drifts at dusk. Carries small loads on its silvery dust.',
+    nocturnal: true,
   },
   {
     id: 2,

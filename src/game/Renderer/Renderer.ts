@@ -4,6 +4,7 @@ import { TilemapView } from './TilemapView'
 import { EntityLayer } from './EntityLayer'
 import { Camera } from './Camera'
 import { TILE_SIZE } from '@/shared/constants'
+import { phaseOf } from '../Sim/systems/time'
 
 export type TileClickHandler = (tx: number, ty: number, button: number, shiftKey: boolean) => void
 
@@ -14,6 +15,7 @@ export class Renderer {
   private overlay: Graphics
   private tilemap: TilemapView | null = null
   private entities: EntityLayer | null = null
+  private nightTint: Graphics
   private resizeObserver: ResizeObserver
   private camera: Camera | null = null
   private clickHandler: TileClickHandler | null = null
@@ -26,6 +28,8 @@ export class Renderer {
     this.viewport.label = 'viewport'
     this.overlay = new Graphics()
     this.overlay.label = 'overlay'
+    this.nightTint = new Graphics()
+    this.nightTint.label = 'nightTint'
     this.resizeObserver = new ResizeObserver(() => this.handleResize())
   }
 
@@ -41,6 +45,7 @@ export class Renderer {
     })
     this.host.appendChild(this.app.canvas)
     this.app.stage.addChild(this.viewport)
+    this.app.stage.addChild(this.nightTint) // tint sits above world but below DOM HUD
     this.viewport.addChild(this.overlay)
     this.host.addEventListener('contextmenu', this.preventContext)
     this.host.addEventListener('click', this.onLeftClick)
@@ -76,6 +81,22 @@ export class Renderer {
     this.tilemap?.update(sim)
     this.entities?.update(sim)
     this.drawDesignations(sim)
+    this.drawNightTint(sim)
+  }
+
+  private drawNightTint(sim: SimWorld): void {
+    const phase = phaseOf(sim)
+    let alpha = 0
+    let color = 0x0a1b2e
+    if (phase === 'night') alpha = 0.45
+    else if (phase === 'dusk' || phase === 'dawn') {
+      alpha = 0.2
+      color = phase === 'dusk' ? 0x4a2a18 : 0x3a2e18
+    }
+    const g = this.nightTint
+    g.clear()
+    if (alpha === 0) return
+    g.rect(0, 0, this.host.clientWidth, this.host.clientHeight).fill({ color, alpha })
   }
 
   dispose(): void {
