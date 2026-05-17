@@ -5,6 +5,7 @@ import { system_position_prev } from './systems/movement'
 import { system_path_follow } from './systems/pathFollow'
 import { system_pawn_behavior } from './systems/behavior'
 import { system_wild_ai } from './systems/wildAi'
+import { system_critter_follow } from './systems/critterFollow'
 import { makeJobSystem, type JobsHooks } from './systems/jobs'
 import { makeRaidSystem, type RaidHooks } from './systems/raid'
 
@@ -23,6 +24,7 @@ export function makeRunTick(hooks: SimHooks): (sim: SimWorld) => void {
     system_pawn_behavior(sim)
     jobsSystem(sim)
     system_wild_ai(sim)
+    system_critter_follow(sim)
     raidSystem(sim)
     system_path_follow(sim)
     sim.tick++
@@ -36,6 +38,7 @@ export function runTick(sim: SimWorld): void {
   system_needs_decay(sim)
   system_pawn_behavior(sim)
   system_wild_ai(sim)
+  system_critter_follow(sim)
   system_path_follow(sim)
   sim.tick++
 }

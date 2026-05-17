@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
 
 export interface EntitySnapshot {
   eid: number
@@ -8,6 +8,8 @@ export interface EntitySnapshot {
   needs?: { food: number; rest: number; joy: number; warmth: number }
   health?: { hp: number; maxHp: number }
   renderable?: { spriteId: number; layer: number; tint: number }
+  critter?: { speciesId: number; level: number; xp: number; bond: number }
+  bond?: { partnerEid: number; level: number }
 }
 
 export interface DesignationSnapshot {
@@ -33,7 +35,14 @@ export interface SaveDocV1 {
   events: string[]
 }
 
-export type SaveDoc = SaveDocV1
+export interface SaveDocV2 extends Omit<SaveDocV1, 'version'> {
+  version: 2
+  nextRaidTick?: number
+}
+
+export type SaveDoc = SaveDocV1 | SaveDocV2
+
+export type CurrentSaveDoc = SaveDocV2
 
 export interface SaveMeta {
   slotId: string

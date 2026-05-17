@@ -12,6 +12,7 @@ import { makeRunTick } from './Sim/tick'
 import { createBattleState, type BattleAction, type BattleCritter, type Side } from './Sim/Battle/BattleState'
 import { executeTurn, isBattleOver } from './Sim/Battle/BattleSim'
 import { teamFromSpecies } from './Sim/Battle/buildTeam'
+import { tryTame } from './Sim/Critters/tame'
 
 const playerQuery = defineQuery([FactionComp, TilePos, Position])
 
@@ -161,7 +162,11 @@ export class Game {
     if (tx < 0 || ty < 0 || tx >= sim.map.width || ty >= sim.map.height) return
 
     if (button === 0) {
-      this.toggleDesignation(sim, tx, ty)
+      if (shift) {
+        this.tryTameAt(sim, tx, ty)
+      } else {
+        this.toggleDesignation(sim, tx, ty)
+      }
       return
     }
 
@@ -195,6 +200,27 @@ export class Game {
         }
       })
       .catch(() => undefined)
+  }
+
+  private tryTameAt(sim: SimWorld, tx: number, ty: number): void {
+    // Use the player warden closest to the click as the taming attempt origin.
+    const eids = playerQuery(sim.ecs)
+    if (eids.length === 0) return
+    let bestEid = eids[0]!
+    let bestDist = Infinity
+    for (let i = 0; i < eids.length; i++) {
+      const eid = eids[i]!
+      if (FactionComp.id[eid] !== Faction.Player) continue
+      const dx = TilePos.tx[eid]! - tx
+      const dy = TilePos.ty[eid]! - ty
+      const d = dx * dx + dy * dy
+      if (d < bestDist) { bestDist = d; bestEid = eid }
+    }
+    const res = tryTame(sim, bestEid, tx, ty)
+    if (res.reason === 'no_target') sim.events.push(`No wild critter at (${tx},${ty}).`)
+    else if (res.reason === 'too_far') sim.events.push(`Move a warden closer to tame.`)
+    else if (res.reason === 'not_weakened') sim.events.push(`Weaken the critter in battle first.`)
+    else if (res.reason === 'roll_failed') sim.events.push(`Tame attempt failed — try again.`)
   }
 
   private toggleDesignation(sim: SimWorld, tx: number, ty: number): void {

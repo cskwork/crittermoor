@@ -1,5 +1,7 @@
 import { defineQuery, hasComponent } from 'bitecs'
 import {
+  Bond,
+  Critter,
   Faction as FactionComp,
   Health,
   Needs,
@@ -10,6 +12,8 @@ import {
 } from '../components'
 import { createSimWorld, spawnWarden, type SimWorld } from '../world'
 import { SAVE_VERSION, type EntitySnapshot, type SaveDoc } from './schema'
+import { migrateToCurrent } from './migrations'
+import { spawnCritter } from '../Critters/spawn'
 
 const allQuery = defineQuery([Position, TilePos, FactionComp])
 
@@ -42,7 +46,21 @@ export function serialize(sim: SimWorld): SaveDoc {
         tint: Renderable.tint[eid]!,
       }
     }
-    void Pawn // keep import live; pawn flags currently default
+    if (hasComponent(sim.ecs, Critter, eid)) {
+      snap.critter = {
+        speciesId: Critter.speciesId[eid]!,
+        level: Critter.level[eid]!,
+        xp: Critter.xp[eid]!,
+        bond: Critter.bond[eid]!,
+      }
+    }
+    if (hasComponent(sim.ecs, Bond, eid)) {
+      snap.bond = {
+        partnerEid: Bond.partnerEid[eid]!,
+        level: Bond.level[eid]!,
+      }
+    }
+    void Pawn
     entities.push(snap)
   }
   return {
@@ -63,7 +81,8 @@ export function serialize(sim: SimWorld): SaveDoc {
   }
 }
 
-export function deserialize(doc: SaveDoc): SimWorld {
+export function deserialize(input: SaveDoc): SimWorld {
+  const doc = migrateToCurrent(input)
   const sim = createSimWorld(doc.seed)
   sim.map.width = doc.map.width
   sim.map.height = doc.map.height
@@ -71,18 +90,41 @@ export function deserialize(doc: SaveDoc): SimWorld {
   sim.map.cost = unpackUint16LE(b64decode(doc.map.cost))
   sim.tick = doc.tick
   sim.rng.state = doc.rngState
+  // Remap old eids → new eids so cross-references (Bond.partnerEid) survive.
+  const eidRemap = new Map<number, number>()
   for (const e of doc.entities) {
-    const eid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff)
+    let newEid: number
+    if (e.critter) {
+      newEid = spawnCritter(sim, e.critter.speciesId, e.tile.tx, e.tile.ty, { level: e.critter.level })
+    } else {
+      newEid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff)
+    }
+    eidRemap.set(e.eid, newEid)
     if (e.needs) {
-      Needs.food[eid] = e.needs.food
-      Needs.rest[eid] = e.needs.rest
-      Needs.joy[eid] = e.needs.joy
-      Needs.warmth[eid] = e.needs.warmth
+      Needs.food[newEid] = e.needs.food
+      Needs.rest[newEid] = e.needs.rest
+      Needs.joy[newEid] = e.needs.joy
+      Needs.warmth[newEid] = e.needs.warmth
     }
     if (e.health) {
-      Health.hp[eid] = e.health.hp
-      Health.maxHp[eid] = e.health.maxHp
+      Health.hp[newEid] = e.health.hp
+      Health.maxHp[newEid] = e.health.maxHp
     }
+    if (e.critter) {
+      Critter.xp[newEid] = e.critter.xp
+      Critter.bond[newEid] = e.critter.bond
+    }
+    FactionComp.id[newEid] = e.faction
+  }
+  // Second pass: resolve Bond cross-refs now that we have the full remap.
+  for (const e of doc.entities) {
+    if (!e.bond) continue
+    const me = eidRemap.get(e.eid)
+    const partner = eidRemap.get(e.bond.partnerEid)
+    if (me === undefined || partner === undefined) continue
+    if (!hasComponent(sim.ecs, Bond, me)) continue
+    Bond.partnerEid[me] = partner
+    Bond.level[me] = e.bond.level
   }
   for (const d of doc.designations) {
     const key = d.ty * sim.map.width + d.tx
