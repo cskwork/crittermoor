@@ -5,14 +5,16 @@ import { useUiStore } from '@/app/stores/uiStore'
 import { useBattleStore } from '@/app/stores/battleStore'
 import { generateWorld } from './Sim/Gen/worldGen'
 import { createPathClient, type PathClient } from './Sim/Pathing/PathClient'
-import { defineQuery } from 'bitecs'
-import { Faction as FactionComp, Position, TilePos } from './Sim/components'
+import { defineQuery, removeEntity } from 'bitecs'
+import { Faction as FactionComp, Position, Structure, TilePos } from './Sim/components'
 import { Faction, Terrain } from '@/shared/constants'
 import { makeRunTick } from './Sim/tick'
 import { createBattleState, type BattleAction, type BattleCritter, type Side } from './Sim/Battle/BattleState'
 import { executeTurn, isBattleOver } from './Sim/Battle/BattleSim'
 import { teamFromSpecies } from './Sim/Battle/buildTeam'
 import { tryTame } from './Sim/Critters/tame'
+import { STRUCTURES, type StructureKind } from './Sim/Structures/defs'
+import { spawnBlueprint } from './Sim/Structures/spawn'
 
 const playerQuery = defineQuery([FactionComp, TilePos, Position])
 const entityAtTileQuery = defineQuery([TilePos])
@@ -50,6 +52,9 @@ export class Game {
       },
       raid: {
         onRaid: (raidSpeciesIds) => this.triggerRaid(raidSpeciesIds),
+      },
+      construct: {
+        requestPath: (eid, fromX, fromY, toX, toY) => this.requestPath(eid, fromX, fromY, toX, toY),
       },
     })
     this.scheduler = new TickScheduler(sim, () => this.renderer.draw(sim), tick)
@@ -134,6 +139,7 @@ export class Game {
     const tick = makeRunTick({
       jobs: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
       raid: { onRaid: (ids) => this.triggerRaid(ids) },
+      construct: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
     })
     this.scheduler = new TickScheduler(loaded, () => this.renderer.draw(loaded), tick)
     this.scheduler.start()
@@ -196,7 +202,38 @@ export class Game {
       case 'cancel':
         this.cancelDesignationAt(sim, tx, ty)
         break
+      case 'build':
+        this.tryPlaceBlueprint(sim, tx, ty)
+        break
     }
+  }
+
+  private tryPlaceBlueprint(sim: SimWorld, tx: number, ty: number): void {
+    const kind = useUiStore.getState().buildKind as StructureKind
+    const def = STRUCTURES[kind]
+    if (!def) {
+      sim.events.push('Pick a structure first.')
+      return
+    }
+    const key = ty * sim.map.width + tx
+    if (sim.blueprints.has(key)) {
+      sim.events.push(`A blueprint is already at (${tx},${ty}).`)
+      return
+    }
+    const terrain = sim.map.terrain[key]
+    if (terrain === Terrain.WaterDeep || terrain === Terrain.Mountain) {
+      sim.events.push(`Cannot build on ${terrain === Terrain.WaterDeep ? 'deep water' : 'mountain'}.`)
+      return
+    }
+    if (sim.resources.wood < def.cost.wood || sim.resources.stone < def.cost.stone) {
+      sim.events.push(`Not enough materials for ${def.name} (need W${def.cost.wood} S${def.cost.stone}).`)
+      return
+    }
+    sim.resources.wood -= def.cost.wood
+    sim.resources.stone -= def.cost.stone
+    const bp = spawnBlueprint(sim, kind, tx, ty)
+    sim.blueprints.set(key, bp)
+    sim.events.push(`Blueprint placed: ${def.name} at (${tx},${ty}).`)
   }
 
   private selectAt(sim: SimWorld, tx: number, ty: number): void {
@@ -227,7 +264,22 @@ export class Game {
 
   private cancelDesignationAt(sim: SimWorld, tx: number, ty: number): void {
     const key = ty * sim.map.width + tx
-    if (sim.designations.delete(key)) sim.events.push(`Cancelled designation at (${tx},${ty}).`)
+    if (sim.designations.delete(key)) {
+      sim.events.push(`Cancelled designation at (${tx},${ty}).`)
+      return
+    }
+    const bpEid = sim.blueprints.get(key)
+    if (bpEid !== undefined) {
+      const kind = Structure.kind[bpEid] as StructureKind
+      const def = STRUCTURES[kind]
+      if (def) {
+        sim.resources.wood += Math.floor(def.cost.wood / 2)
+        sim.resources.stone += Math.floor(def.cost.stone / 2)
+      }
+      sim.blueprints.delete(key)
+      removeEntity(sim.ecs, bpEid)
+      sim.events.push(`Cancelled blueprint at (${tx},${ty}). 50% refund.`)
+    }
   }
 
   private requestPath(eid: number, fromX: number, fromY: number, toX: number, toY: number): void {

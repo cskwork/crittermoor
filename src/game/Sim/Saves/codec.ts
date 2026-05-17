@@ -8,6 +8,7 @@ import {
   Pawn,
   Position,
   Renderable,
+  Structure,
   TilePos,
   Wild,
 } from '../components'
@@ -16,6 +17,8 @@ import { createSimWorld, spawnWarden, type SimWorld } from '../world'
 import { SAVE_VERSION, type EntitySnapshot, type SaveDoc } from './schema'
 import { migrateToCurrent } from './migrations'
 import { spawnCritter } from '../Critters/spawn'
+import { spawnBlueprint, spawnCompleteStructure } from '../Structures/spawn'
+import type { StructureKind } from '../Structures/defs'
 import { getRaidState, setRaidState } from '../systems/raid'
 
 const allQuery = defineQuery([Position, TilePos, FactionComp])
@@ -63,6 +66,13 @@ export function serialize(sim: SimWorld): SaveDoc {
         level: Bond.level[eid]!,
       }
     }
+    if (hasComponent(sim.ecs, Structure, eid)) {
+      snap.structure = {
+        kind: Structure.kind[eid]!,
+        state: Structure.state[eid]!,
+        progress: Structure.progress[eid]!,
+      }
+    }
     void Pawn
     entities.push(snap)
   }
@@ -82,6 +92,8 @@ export function serialize(sim: SimWorld): SaveDoc {
     designations: Array.from(sim.designations.values()),
     events: sim.events.slice(-50),
     raid: getRaidState(sim) ?? undefined,
+    resources: { wood: sim.resources.wood, stone: sim.resources.stone },
+    blueprintKeys: Array.from(sim.blueprints.keys()),
   }
 }
 
@@ -98,7 +110,13 @@ export function deserialize(input: SaveDoc): SimWorld {
   const eidRemap = new Map<number, number>()
   for (const e of doc.entities) {
     let newEid: number
-    if (e.critter) {
+    if (e.structure) {
+      const kind = e.structure.kind as StructureKind
+      newEid = e.structure.state === 1
+        ? spawnCompleteStructure(sim, kind, e.tile.tx, e.tile.ty)
+        : spawnBlueprint(sim, kind, e.tile.tx, e.tile.ty)
+      Structure.progress[newEid] = e.structure.progress
+    } else if (e.critter) {
       newEid = spawnCritter(sim, e.critter.speciesId, e.tile.tx, e.tile.ty, { level: e.critter.level })
     } else {
       newEid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff)
@@ -141,6 +159,17 @@ export function deserialize(input: SaveDoc): SimWorld {
   }
   sim.events = [...doc.events]
   if (doc.raid) setRaidState(sim, { nextRaidTick: doc.raid.nextRaidTick, scheduled: doc.raid.scheduled })
+  if (doc.resources) sim.resources = { wood: doc.resources.wood, stone: doc.resources.stone }
+  if (doc.blueprintKeys) {
+    // Rebuild blueprint lookup from the entities just spawned.
+    for (const e of doc.entities) {
+      if (!e.structure || e.structure.state !== 0) continue
+      const me = eidRemap.get(e.eid)
+      if (me === undefined) continue
+      const key = e.tile.ty * sim.map.width + e.tile.tx
+      sim.blueprints.set(key, me)
+    }
+  }
   return sim
 }
 

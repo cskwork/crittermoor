@@ -103,7 +103,7 @@ function progressJob(sim: SimWorld, eid: number): void {
   const need = designation.kind === 'chop' ? WORK_TICKS_CHOP : WORK_TICKS_MINE
   if (Job.progress[eid]! < need) return
 
-  // Work done. Convert tile, award skill XP (capped at 20), and drop an event.
+  // Work done. Convert tile, award skill XP (capped at 20), produce material, drop an event.
   const i = designation.ty * sim.map.width + designation.tx
   sim.map.terrain[i] = designation.kind === 'chop' ? Terrain.Grass : Terrain.Dirt
   sim.map.cost[i] = designation.kind === 'chop' ? 10 : 12
@@ -112,8 +112,10 @@ function progressJob(sim: SimWorld, eid: number): void {
     if (designation.kind === 'chop' && (Skills.construct[eid] ?? 0) < 20) Skills.construct[eid]!++
     if (designation.kind === 'mine' && (Skills.mine[eid] ?? 0) < 20) Skills.mine[eid]!++
   }
+  if (designation.kind === 'chop') sim.resources.wood += 2
+  else sim.resources.stone += 2
   sim.events.push(
-    `${designation.kind === 'chop' ? 'Chopped' : 'Mined'} at (${designation.tx},${designation.ty}).`,
+    `${designation.kind === 'chop' ? 'Chopped (+2 wood)' : 'Mined (+2 stone)'} at (${designation.tx},${designation.ty}).`,
   )
   clearJob(eid)
 }

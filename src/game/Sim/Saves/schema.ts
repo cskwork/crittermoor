@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 
 export interface EntitySnapshot {
   eid: number
@@ -10,6 +10,7 @@ export interface EntitySnapshot {
   renderable?: { spriteId: number; layer: number; tint: number }
   critter?: { speciesId: number; level: number; xp: number; bond: number }
   bond?: { partnerEid: number; level: number }
+  structure?: { kind: number; state: number; progress: number }
 }
 
 export interface DesignationSnapshot {
@@ -40,9 +41,15 @@ export interface SaveDocV2 extends Omit<SaveDocV1, 'version'> {
   raid?: { nextRaidTick: number; scheduled: boolean }
 }
 
-export type SaveDoc = SaveDocV1 | SaveDocV2
+export interface SaveDocV3 extends Omit<SaveDocV2, 'version'> {
+  version: 3
+  resources?: { wood: number; stone: number }
+  blueprintKeys?: number[]
+}
 
-export type CurrentSaveDoc = SaveDocV2
+export type SaveDoc = SaveDocV1 | SaveDocV2 | SaveDocV3
+
+export type CurrentSaveDoc = SaveDocV3
 
 export interface SaveMeta {
   slotId: string

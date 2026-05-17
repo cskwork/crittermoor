@@ -6,6 +6,7 @@ import { dayOf, phaseOf } from '@/game/Sim/systems/time'
 import { Toolbar } from '@/ui/panels/Toolbar'
 import { SelectionPanel } from '@/ui/panels/SelectionPanel'
 import { EventsLog } from '@/ui/panels/EventsLog'
+import { Resources } from '@/ui/panels/Resources'
 
 const SPEEDS: SpeedSetting[] = [0, 1, 2, 4]
 const DEFAULT_SLOT = 'autosave'
@@ -105,6 +106,7 @@ export function HUD() {
       </div>
 
       <Toolbar />
+      <Resources />
       <EventsLog />
       <SelectionPanel />
 

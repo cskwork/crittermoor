@@ -5,6 +5,7 @@ const TOOL_HOTKEYS: Record<string, ToolMode> = {
   KeyS: 'select',
   KeyC: 'chop',
   KeyM: 'mine',
+  KeyB: 'build',
   KeyT: 'tame',
   KeyX: 'cancel',
 }

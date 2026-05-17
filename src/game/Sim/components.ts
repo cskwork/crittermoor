@@ -36,3 +36,12 @@ export const Wild = defineComponent({ aggression: Types.ui8, packId: Types.ui16 
 
 // Path is stored externally keyed by eid (arrays don't fit cleanly in bitecs components)
 export const HasPath = defineComponent({ cursor: Types.ui16 })
+
+// Structures occupy a tile. kind = StructureKind enum.
+// state: 0 blueprint, 1 complete. progress 0..255 toward 255=complete.
+export const Structure = defineComponent({
+  kind: Types.ui8,
+  state: Types.ui8,
+  progress: Types.ui16,
+  facing: Types.ui8,
+})

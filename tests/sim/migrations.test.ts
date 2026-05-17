@@ -31,12 +31,12 @@ describe('save migrations', () => {
     expect(sim.map.width).toBeGreaterThan(0)
   })
 
-  it('round-trips a v2 save with critter + bond', () => {
+  it('round-trips a current-version save with critter + bond', () => {
     const sim = createSimWorld(5)
     const warden = spawnWarden(sim, 10, 10, 0xa8d08d)
     void warden
     const doc = serialize(sim)
-    expect(doc.version).toBe(2)
+    expect(doc.version).toBe(3)
     const sim2 = deserialize(doc)
     expect(sim2.tick).toBe(sim.tick)
     expect(sim2.seed).toBe(sim.seed)

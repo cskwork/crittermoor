@@ -1,12 +1,18 @@
 import { Container, Graphics, Sprite } from 'pixi.js'
 import { TILE_SIZE } from '@/shared/constants'
 import type { SimWorld } from '../Sim/world'
-import { Critter, Position, Renderable } from '../Sim/components'
+import { Critter, Position, Renderable, Structure } from '../Sim/components'
 import { defineQuery, hasComponent } from 'bitecs'
 import { speciesById } from '../Sim/Critters/species'
+import { STRUCTURES, type StructureKind } from '../Sim/Structures/defs'
 import { createSpriteCache, type SpriteCache } from './SpriteCache'
 
 const visibleQuery = defineQuery([Position, Renderable])
+
+type SpriteRef =
+  | { kind: 'critter'; speciesKey: string }
+  | { kind: 'warden'; tint: number }
+  | { kind: 'structure'; key: string; blueprint: boolean }
 
 export class EntityLayer {
   readonly container: Container
@@ -18,7 +24,7 @@ export class EntityLayer {
     this.container = new Container()
     this.container.label = 'entities'
     this.cache = createSpriteCache()
-    void this.cache.preloadAll() // async; sprites will appear once loaded
+    void this.cache.preloadAll()
   }
 
   update(sim: SimWorld): void {
@@ -27,20 +33,14 @@ export class EntityLayer {
     for (let i = 0; i < eids.length; i++) {
       const eid = eids[i]!
       seen.add(eid)
-      const isCritter = hasComponent(sim.ecs, Critter, eid)
-      const species = isCritter ? speciesById(Critter.speciesId[eid] ?? 0) : null
-      const spriteKey = species?.key
-      let node: Graphics | Sprite
-      if (spriteKey) {
-        node = this.ensureSprite(eid, spriteKey, null) ?? this.ensureGraphics(eid)
-      } else {
-        // Warden sprites are tint-based: pale / green / red picked from Renderable.tint.
-        const tint = Renderable.tint[eid] ?? 0xffffff
-        node = this.ensureSprite(eid, null, tint) ?? this.ensureGraphics(eid)
-      }
+      const ref = this.refFor(sim, eid)
+      const node = this.ensureNode(eid, ref)
       const px = Position.x[eid]! * TILE_SIZE + TILE_SIZE / 2
       const py = Position.y[eid]! * TILE_SIZE + TILE_SIZE / 2
       node.position.set(px, py)
+      if (ref.kind === 'structure' && node instanceof Sprite) {
+        node.alpha = ref.blueprint ? 0.45 : 1
+      }
     }
     for (const [eid, g] of this.graphicsByEid) {
       if (!seen.has(eid)) {
@@ -56,6 +56,29 @@ export class EntityLayer {
     }
   }
 
+  private refFor(sim: SimWorld, eid: number): SpriteRef {
+    if (hasComponent(sim.ecs, Structure, eid)) {
+      const kind = Structure.kind[eid] as StructureKind
+      const def = STRUCTURES[kind]
+      return {
+        kind: 'structure',
+        key: def?.spriteKey ?? 'wall',
+        blueprint: Structure.state[eid] === 0,
+      }
+    }
+    if (hasComponent(sim.ecs, Critter, eid)) {
+      const species = speciesById(Critter.speciesId[eid] ?? 0)
+      return { kind: 'critter', speciesKey: species?.key ?? 'spritmoth' }
+    }
+    return { kind: 'warden', tint: Renderable.tint[eid] ?? 0xffffff }
+  }
+
+  private ensureNode(eid: number, ref: SpriteRef): Graphics | Sprite {
+    const sprite = this.ensureSprite(eid, ref)
+    if (sprite) return sprite
+    return this.ensureGraphics(eid)
+  }
+
   private ensureGraphics(eid: number): Graphics {
     let g = this.graphicsByEid.get(eid)
     if (!g) {
@@ -67,14 +90,13 @@ export class EntityLayer {
     return g
   }
 
-  private ensureSprite(eid: number, speciesKey: string | null, wardenTint: number | null): Sprite | null {
+  private ensureSprite(eid: number, ref: SpriteRef): Sprite | null {
     let s = this.spriteByEid.get(eid)
     if (s) return s
-    const tex = speciesKey
-      ? this.cache.textureBySpeciesKey(speciesKey)
-      : wardenTint !== null
-        ? this.cache.textureForWardenTint(wardenTint)
-        : null
+    let tex
+    if (ref.kind === 'critter') tex = this.cache.textureBySpeciesKey(ref.speciesKey)
+    else if (ref.kind === 'warden') tex = this.cache.textureForWardenTint(ref.tint)
+    else tex = this.cache.textureForStructureKey(ref.key)
     if (!tex) return null
     s = new Sprite(tex)
     s.anchor.set(0.5)
@@ -82,7 +104,6 @@ export class EntityLayer {
     s.height = TILE_SIZE
     this.container.addChild(s)
     this.spriteByEid.set(eid, s)
-    // Remove placeholder graphics if present.
     const placeholder = this.graphicsByEid.get(eid)
     if (placeholder) {
       placeholder.destroy()

@@ -18,6 +18,11 @@ export interface Designation {
   ty: number
 }
 
+export interface ColonyResources {
+  wood: number
+  stone: number
+}
+
 export interface SimWorld {
   ecs: IWorld
   rng: Rng
@@ -26,6 +31,8 @@ export interface SimWorld {
   map: TileMap
   paths: PathStorage
   designations: Map<number, Designation>
+  blueprints: Map<number, number> // tile-key → structure eid (state=blueprint)
+  resources: ColonyResources
   events: string[]
 }
 
@@ -47,6 +54,8 @@ export function createSimWorld(seed: number): SimWorld {
     map,
     paths: new PathStorage(),
     designations: new Map(),
+    blueprints: new Map(),
+    resources: { wood: 30, stone: 30 },
     events: [],
   }
 }

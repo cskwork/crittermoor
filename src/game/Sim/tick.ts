@@ -8,21 +8,27 @@ import { system_wild_ai } from './systems/wildAi'
 import { system_critter_follow } from './systems/critterFollow'
 import { makeJobSystem, type JobsHooks } from './systems/jobs'
 import { makeRaidSystem, type RaidHooks } from './systems/raid'
+import { makeConstructSystem, type ConstructHooks } from './systems/construct'
+import { system_turret } from './systems/turret'
 
 export interface SimHooks {
   jobs: JobsHooks
   raid: RaidHooks
+  construct: ConstructHooks
 }
 
 export function makeRunTick(hooks: SimHooks): (sim: SimWorld) => void {
   const jobsSystem = makeJobSystem(hooks.jobs)
   const raidSystem = makeRaidSystem(hooks.raid)
+  const constructSystem = makeConstructSystem(hooks.construct)
   return function runTick(sim: SimWorld): void {
     system_position_prev(sim)
     system_time(sim)
     system_needs_decay(sim)
     system_pawn_behavior(sim)
     jobsSystem(sim)
+    constructSystem(sim)
+    system_turret(sim)
     system_wild_ai(sim)
     system_critter_follow(sim)
     raidSystem(sim)
@@ -31,7 +37,7 @@ export function makeRunTick(hooks: SimHooks): (sim: SimWorld) => void {
   }
 }
 
-// Headless variant for tests: jobs/behavior/wild AI run but path requests + raids are no-op.
+// Headless tests: no path requests.
 export function runTick(sim: SimWorld): void {
   system_position_prev(sim)
   system_time(sim)
