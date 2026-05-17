@@ -4,6 +4,7 @@ import { useUiStore } from './stores/uiStore'
 import { TitleScreen } from '@ui/screens/TitleScreen'
 import { HUD } from '@ui/screens/HUD'
 import { BattleScreen } from '@ui/screens/BattleScreen'
+import { Tutorial } from '@ui/screens/Tutorial'
 import { Keybindings } from './Keybindings'
 
 export function App() {
@@ -29,7 +30,12 @@ export function App() {
       <Keybindings />
       {booting && <div className="boot-overlay">Loading Crittermoor…</div>}
       {!booting && screen === 'title' && <TitleScreen onStart={(seed) => gameRef.current?.newGame(seed)} />}
-      {!booting && screen === 'colony' && <HUD />}
+      {!booting && screen === 'colony' && (
+        <>
+          <HUD />
+          <Tutorial />
+        </>
+      )}
       {!booting && screen === 'battle' && <BattleScreen />}
     </div>
   )
