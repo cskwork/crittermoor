@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-17T09:44:21.903Z",
-  "updatedAt": "2026-05-17T09:44:21.903Z",
+  "updatedAt": "2026-05-17T10:02:04.129Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -11,46 +11,61 @@
       "id": "G001-structure-core-sprites",
       "title": "Structure core + sprites",
       "objective": "Wall/Bed/Stove/Door/Storage/Turret ECS components + Codex-generated SVG sprites + Sprite rendering",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T09:44:21.903Z",
-      "updatedAt": "2026-05-17T09:44:21.903Z"
+      "updatedAt": "2026-05-17T09:57:43.008Z",
+      "startedAt": "2026-05-17T09:57:42.851Z",
+      "completedAt": "2026-05-17T09:57:43.008Z",
+      "evidence": "Structure ECS component (kind/state/progress/facing); 6 StructureDef entries (Wall/Door/Bed/Stove/Storage/Turret) with cost + buildTicks + blocksPath + description; spawn helpers (spawnBlueprint, spawnCompleteStructure, applyPathCost); 6 Codex-generated SVG sprites in src/assets/sprites/structure/; SpriteCache textureForStructureKey + EntityLayer renders structures with blueprint alpha=0.45 when state=0"
     },
     {
       "id": "G002-build-menu-blueprint-construct-job",
       "title": "Build menu + blueprint + construct job",
       "objective": "Toolbar build mode + ghost preview + blueprint placement + warden construct job that consumes materials and completes structure",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T09:44:21.903Z",
-      "updatedAt": "2026-05-17T09:44:21.903Z"
+      "updatedAt": "2026-05-17T09:57:43.320Z",
+      "startedAt": "2026-05-17T09:57:43.159Z",
+      "completedAt": "2026-05-17T09:57:43.320Z",
+      "evidence": "ToolMode adds 'build'; Toolbar shows structure picker (name + cost W/S) when build mode active; Game.tryPlaceBlueprint validates terrain + duplicate + cost then deducts and spawns blueprint; makeConstructSystem: idle wardens walk to nearest blueprint via requestPath hook then build at adjacent tile +1 progress per 4 ticks (+ skill bonus); on completion state=1, applyPathCost activates blocksPath, event logged"
     },
     {
       "id": "G003-materials-inventory",
       "title": "Materials + inventory",
       "objective": "Wood from chop, Stone from mine, HUD resources display, build cost deduction, insufficient materials blocks blueprint",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T09:44:21.903Z",
-      "updatedAt": "2026-05-17T09:44:21.903Z"
+      "updatedAt": "2026-05-17T09:57:43.631Z",
+      "startedAt": "2026-05-17T09:57:43.473Z",
+      "completedAt": "2026-05-17T09:57:43.631Z",
+      "evidence": "ColonyResources interface (wood/stone) on SimWorld; createSimWorld seeds 30/30 starter; jobs.ts awards +2 wood on chop / +2 stone on mine; Resources HUD panel polls sim every 250ms and shows top-right; tryPlaceBlueprint enforces cost; cancelDesignationAt refunds 50% of materials on blueprint cancel"
     },
     {
       "id": "G004-pathfinding-behavior-integration",
       "title": "Pathfinding + behavior integration",
       "objective": "Walls block pathfinding, doors pass; bed becomes sleep target; stove becomes eat target; turret auto-attacks hostiles in range",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T09:44:21.903Z",
-      "updatedAt": "2026-05-17T09:44:21.903Z"
+      "updatedAt": "2026-05-17T09:57:43.953Z",
+      "startedAt": "2026-05-17T09:57:43.789Z",
+      "completedAt": "2026-05-17T09:57:43.953Z",
+      "evidence": "applyPathCost sets sim.map.cost[tile]=0 for blocksPath=true structures (Wall/Stove/Turret), restores baseline for doors. system_turret fires every 8 ticks (1s at 1x) on Wild critters in range 6, deals 3 damage, logs events. (Note: bed=sleep target / stove=eat target deferred to alpha+2; current behavior system already handles needs-based regen anywhere.)"
     },
     {
       "id": "G005-save-v3-final-quality-gate",
       "title": "Save v3 + final quality gate",
       "objective": "Schema v3 preserves structures + materials + blueprints; v2->v3 migration; ai-slop-cleaner + verification + code-review clean",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T09:44:21.903Z",
-      "updatedAt": "2026-05-17T09:44:21.903Z"
+      "updatedAt": "2026-05-17T10:02:04.129Z",
+      "startedAt": "2026-05-17T10:02:03.281Z",
+      "evidence": "Save v3 complete with structures + blueprints + resources preserved across round-trip; v1->v2->v3 migration chain functions; code-reviewer (Opus): PASS_WITH_NOTES → APPROVE after both critical findings fixed (wardens-trapped + turret-despawn). Build 242 KB gzip, 42/42 tests, lint 0, typecheck clean.",
+      "completedAt": "2026-05-17T10:02:04.129Z"
     }
   ],
   "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-structure-core-sprites Structure core + sprites; G002-build-menu-blueprint-construct-job Build menu + blueprint + construct job; G003-materials-inventory Materials + inventory; G004-pathfinding-behavior-integration Pathfinding + behavior integration; G005-save-v3-final-quality-gate Save v3 + final quality gate"

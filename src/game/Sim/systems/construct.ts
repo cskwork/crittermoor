@@ -69,12 +69,17 @@ function progressBuild(sim: SimWorld, bpEid: number, wardenEid: number): void {
   const skillBonus = hasComponent(sim.ecs, Skills, wardenEid)
     ? Math.floor((Skills.construct[wardenEid] ?? 0) / 6)
     : 0
-  Structure.progress[bpEid] = Math.min(65535, (Structure.progress[bpEid] ?? 0) + 1 + skillBonus)
+  const tx = TilePos.tx[bpEid] ?? 0
+  const ty = TilePos.ty[bpEid] ?? 0
+  // Hold the last point of progress while a mobile entity stands on the tile;
+  // otherwise a blocksPath structure could trap them on cost=0.
+  const blocked = def.blocksPath && isMobileOnTile(sim, tx, ty, bpEid)
+  const cap = blocked ? Math.max(0, def.buildTicks - 1) : Number.MAX_SAFE_INTEGER
+  const next = Math.min(cap, (Structure.progress[bpEid] ?? 0) + 1 + skillBonus)
+  Structure.progress[bpEid] = Math.min(65535, next)
   if (Structure.progress[bpEid]! >= def.buildTicks) {
     Structure.state[bpEid] = 1
     Structure.progress[bpEid] = 0
-    const tx = TilePos.tx[bpEid] ?? 0
-    const ty = TilePos.ty[bpEid] ?? 0
     applyPathCost(sim, kind, tx, ty)
     sim.blueprints.delete(ty * sim.map.width + tx)
     if (hasComponent(sim.ecs, Skills, wardenEid) && (Skills.construct[wardenEid] ?? 0) < 20) {
@@ -82,6 +87,19 @@ function progressBuild(sim: SimWorld, bpEid: number, wardenEid: number): void {
     }
     sim.events.push(`Built ${def.name} at (${tx},${ty}).`)
   }
+}
+
+const occupantQuery = defineQuery([TilePos])
+
+function isMobileOnTile(sim: SimWorld, tx: number, ty: number, ignoreEid: number): boolean {
+  const eids = occupantQuery(sim.ecs)
+  for (let i = 0; i < eids.length; i++) {
+    const eid = eids[i]!
+    if (eid === ignoreEid) continue
+    if (hasComponent(sim.ecs, Structure, eid)) continue
+    if (TilePos.tx[eid] === tx && TilePos.ty[eid] === ty) return true
+  }
+  return false
 }
 
 function nearestPassableNeighbor(

@@ -1,4 +1,4 @@
-import { defineQuery, hasComponent } from 'bitecs'
+import { defineQuery, hasComponent, removeEntity } from 'bitecs'
 import {
   Faction as FactionComp,
   Health,
@@ -48,6 +48,9 @@ export function system_turret(sim: SimWorld): void {
     const remaining = Math.max(0, (Health.hp[bestEid] ?? 0) - TURRET_DAMAGE)
     Health.hp[bestEid] = remaining
     sim.events.push(`Turret at (${tx},${ty}) hit a wild critter for ${TURRET_DAMAGE}.`)
-    if (remaining === 0) sim.events.push('A wild critter was downed by a turret.')
+    if (remaining === 0) {
+      sim.events.push('A wild critter was downed by a turret.')
+      removeEntity(sim.ecs, bestEid)
+    }
   }
 }
