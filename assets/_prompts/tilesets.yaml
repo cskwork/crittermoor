@@ -1,0 +1,43 @@
+# Tileset prompt set: 24x24 tile sprites for terrain layers.
+
+style: |
+  Top-down 24x24 tile, seamless tileable when adjacent, soft natural lighting,
+  earthy palette, no text, no copyrighted assets, suitable for a frontier colony sim.
+
+terrains:
+  - key: grass
+    description: Mixed short grass with a few small clumps.
+    palette: [#6da26a, #7fbf66, #5f8c5a]
+
+  - key: dirt
+    description: Beaten earth with faint footpaths.
+    palette: [#8b6f47, #75593a]
+
+  - key: sand
+    description: Pale dry sand with subtle wind ripples.
+    palette: [#d8c98c, #c2b274]
+
+  - key: stone
+    description: Dense pebbly ground with hints of ore.
+    palette: [#808688, #6a6f70]
+
+  - key: mountain
+    description: Sheer rock face, impassable; tile reads as wall.
+    palette: [#4a4a52, #3b3b42]
+
+  - key: water_shallow
+    description: Shallow rippling water, suggests crossing possible.
+    palette: [#4c80a8, #76a8c8]
+
+  - key: water_deep
+    description: Dark navy still water, impassable.
+    palette: [#2c5478, #1d3955]
+
+  - key: forest
+    description: Densely packed leafy canopy as ground texture.
+    palette: [#3f6e3a, #4f7f4a]
+
+outputs:
+  - kind: tile
+    size_px: 24
+    file_pattern: terrain/{key}.svg

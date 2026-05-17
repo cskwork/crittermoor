@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.DS_Store
+*.log
+.env
+.env.local
+.vite
+.vitest-cache
+.tsbuild
+*.tsbuildinfo
+playwright-report
+test-results
+generated/raw

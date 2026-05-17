@@ -1,0 +1,48 @@
+{
+  "name": "crittermoor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Crittermoor — a browser-playable RimWorld-style colony sim with tameable critters.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify": "npm run typecheck && npm run lint && npm run test"
+  },
+  "dependencies": {
+    "bitecs": "^0.3.40",
+    "howler": "^2.2.4",
+    "idb": "^8.0.0",
+    "pixi.js": "^8.2.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.46.0",
+    "@types/howler": "^2.2.11",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^2.0.5",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "fast-check": "^3.20.0",
+    "happy-dom": "^14.12.3",
+    "prettier": "^3.3.3",
+    "typescript": "~5.5.3",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.5"
+  }
+}

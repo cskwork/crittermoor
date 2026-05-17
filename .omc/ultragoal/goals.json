@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "createdAt": "2026-05-17T07:47:22.716Z",
+  "updatedAt": "2026-05-17T08:00:26.535Z",
+  "briefPath": ".omc/ultragoal/brief.md",
+  "goalsPath": ".omc/ultragoal/goals.json",
+  "ledgerPath": ".omc/ultragoal/ledger.jsonl",
+  "claudeGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-research-architecture-spec",
+      "title": "Research & Architecture Spec",
+      "objective": "Produce docs/spec.md, docs/architecture.md, key ADRs; lock tech stack and ECS schema",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:51:17.865Z",
+      "startedAt": "2026-05-17T07:51:06.083Z",
+      "completedAt": "2026-05-17T07:51:17.865Z",
+      "evidence": "docs/spec.md (game design, 10 sections, MVP definition of done); docs/architecture.md (layered architecture, ECS schema, tick loop, save format, perf budgets, asset pipeline); ADRs 0001-0005 (tech stack, bitecs ECS, tick loop, save format, codex asset pipeline); plan.md (brief with 14 stories)"
+    },
+    {
+      "id": "G002-project-scaffold",
+      "title": "Project Scaffold",
+      "objective": "Vite + TS strict + PixiJS + bitecs + React + Vitest + ESLint + Prettier + npm scripts; hello-canvas runs",
+      "status": "complete",
+      "attempt": 1,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T08:00:26.535Z",
+      "startedAt": "2026-05-17T08:00:26.337Z",
+      "completedAt": "2026-05-17T08:00:26.535Z",
+      "evidence": "Vite + TS strict + PixiJS v8 + bitecs 0.3.40 + React 18 + Zustand + Vitest scaffolded. Typecheck clean. 6/6 tests pass (rng determinism, world gen determinism, needs decay). Build OK: 778 modules, ~190KB gzip JS (pixi 135 + react 45 + app 6 + ecs 3), under 600KB budget. Hello-canvas + title screen wired."
+    },
+    {
+      "id": "G003-world-tilemap",
+      "title": "World & Tilemap",
+      "objective": "Chunked tile grid, terrain types, camera + render culling, fog of war",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G004-ecs-core-sim-loop",
+      "title": "ECS Core & Sim Loop",
+      "objective": "Components, systems, tick scheduler, deterministic RNG, web worker pathfinding (A*)",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G005-pawns-needs",
+      "title": "Pawns & Needs",
+      "objective": "Wardens with hunger/sleep/rest, schedule, work priorities UI",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G006-job-system",
+      "title": "Job System",
+      "objective": "Chop, mine, haul, build (wall/floor/door/bed/table/stove/storage), cook, sow, harvest",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G007-critter-system",
+      "title": "Critter System",
+      "objective": "Codex-generated species data, capture, tame, bond, assign to work/battle teams",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G008-turn-based-battle",
+      "title": "Turn-Based Battle",
+      "objective": "Battle scene, moves, types, status effects, AI, item use",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G009-ui-shell",
+      "title": "UI Shell",
+      "objective": "React panels (colonist, critter, build menu, work tab, schedule, alerts)",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G010-save-load-procedural-world-gen",
+      "title": "Save/Load + Procedural World Gen",
+      "objective": "Versioned IndexedDB saves, biome generator, seed input",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G011-asset-pipeline-codex",
+      "title": "Asset Pipeline (Codex)",
+      "objective": "Original critter sprites + tilesets + UI icons; prompts checked in; build packs atlases",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G012-polish-tutorial",
+      "title": "Polish & Tutorial",
+      "objective": "First-run UX, balancing pass, audio, ambient loop",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G013-production-hardening",
+      "title": "Production Hardening",
+      "objective": "Perf budgets, error boundaries, Lighthouse pass, build optimizations",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    },
+    {
+      "id": "G014-final-quality-gate",
+      "title": "Final Quality Gate",
+      "objective": "ai-slop-cleaner + verification + code-review all clean — ready to ship",
+      "status": "pending",
+      "attempt": 0,
+      "createdAt": "2026-05-17T07:47:22.716Z",
+      "updatedAt": "2026-05-17T07:47:22.716Z"
+    }
+  ],
+  "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-research-architecture-spec Research & Architecture Spec; G002-project-scaffold Project Scaffold; G003-world-tilemap World & Tilemap; G004-ecs-core-sim-loop ECS Core & Sim Loop; G005-pawns-needs Pawns & Needs; G006-job-system Job System; G007-critter-system Critter System; G008-turn-based-battle Turn-Based Battle; G009-ui-shell UI Shell; G010-save-load-procedural-world-gen Save/Load + Procedural World Gen; G011-asset-pipeline-codex Asset Pipeline (Codex); G012-polish-tutorial Polish & Tutorial; G013-production-hardening Production Hardening; G014-final-quality-gate Final Quality Gate"
+}

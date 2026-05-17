@@ -1,0 +1,49 @@
+:root {
+  color-scheme: dark light;
+  --bg: #14191e;
+  --panel: rgba(20, 25, 30, 0.85);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text: #e8ece8;
+  --text-dim: #9aa39a;
+  --accent: #a8d08d;
+  --danger: #e07a5f;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+
+.app-root { position: relative; height: 100%; width: 100%; overflow: hidden; }
+.canvas-host { position: absolute; inset: 0; }
+.canvas-host canvas { display: block; image-rendering: pixelated; }
+
+.boot-overlay {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  background: var(--bg); color: var(--text-dim);
+  font-size: 18px; letter-spacing: 0.04em;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  padding: 12px;
+}
+
+button {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

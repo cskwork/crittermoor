@@ -1,0 +1,55 @@
+# Crittermoor critter sprite prompt set.
+# Provenance: this YAML is the source of truth for generated critter art.
+# Each entry yields a 32x32 sprite (idle) and a 64x64 portrait.
+# No reference to copyrighted creatures of any IP.
+
+style: |
+  Game-asset, original creature design, 2D side-on silhouette friendly, pixel-art-ready vector,
+  earthy frontier palette (#6da26a #8b6f47 #a8d08d #e07a5f #6aa5d0 #cfe9f0), no text,
+  centered on transparent background, distinctive silhouette readable at 16px,
+  no copyrighted creature references.
+
+critters:
+  - key: spritmoth
+    description: |
+      A pale luminous moth-spirit; wide downy wings with rune-faint glow,
+      large gentle eyes, drifts at dusk. Spirit/Air type.
+    palette: [pale lilac, silver, pale teal accents]
+
+  - key: tindercub
+    description: |
+      A small bear-cub with smouldering ember mane and warm orange paws,
+      stout body, soft round muzzle. Fire/Beast type.
+    palette: [russet brown, ember orange, warm tan]
+
+  - key: loamfin
+    description: |
+      A short river-eel with broad fins like leaves, mud-mottled scales,
+      curious whiskers. Water/Earth type.
+    palette: [moss green, river brown, slate blue accents]
+
+  - key: brackboar
+    description: |
+      A stout boar coated in dried mud and small stones, low tusks,
+      heavy shoulders. Earth/Beast type.
+    palette: [umber, stone grey, mossy patches]
+
+  - key: ferroquill
+    description: |
+      A hawk-shaped creature lined with iron-grey quills along its neck,
+      sharp beak, alert posture. Metal/Air type.
+    palette: [iron grey, slate blue, pale yellow eye]
+
+  - key: mosskit
+    description: |
+      A kitten-sized creature of woven moss and herbs, soft ears,
+      curling vine tail. Plant/Beast type.
+    palette: [fresh green, herb yellow, bark brown]
+
+outputs:
+  - kind: idle_sprite
+    size_px: 32
+    file_pattern: critter/{key}_idle.svg
+  - kind: portrait
+    size_px: 64
+    file_pattern: critter/{key}_portrait.svg
