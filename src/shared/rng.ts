@@ -21,6 +21,8 @@ export function createRng(seed: number): Rng {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
   const rng: Rng = {
+    // Stored canonical form is signed 32-bit (`| 0`); saves serialize this directly
+    // so encode/decode is the identity. Setter normalizes to keep the contract.
     get state() { return s },
     set state(v: number) { s = v | 0 },
     next,

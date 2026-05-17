@@ -3,8 +3,16 @@ import { useUiStore, type SpeedSetting } from './stores/uiStore'
 
 export function Keybindings() {
   useEffect(() => {
+    function shouldIgnore(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return true
+      if (target.isContentEditable) return true
+      // Space on focused button activates it; let the button handle it instead.
+      if (target.closest('button')) return true
+      return false
+    }
     function onKey(e: KeyboardEvent) {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (shouldIgnore(e.target)) return
       if (e.code === 'Space') {
         e.preventDefault()
         const cur = useUiStore.getState().speed

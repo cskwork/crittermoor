@@ -55,7 +55,7 @@ export function serialize(sim: SimWorld): SaveDoc {
       width: sim.map.width,
       height: sim.map.height,
       terrain: b64encode(sim.map.terrain),
-      cost: b64encode(new Uint8Array(sim.map.cost.buffer.slice(0))),
+      cost: b64encode(packUint16LE(sim.map.cost)),
     },
     entities,
     designations: Array.from(sim.designations.values()),
@@ -68,8 +68,7 @@ export function deserialize(doc: SaveDoc): SimWorld {
   sim.map.width = doc.map.width
   sim.map.height = doc.map.height
   sim.map.terrain = b64decode(doc.map.terrain)
-  const costBytes = b64decode(doc.map.cost)
-  sim.map.cost = new Uint16Array(costBytes.buffer, costBytes.byteOffset, costBytes.byteLength / 2)
+  sim.map.cost = unpackUint16LE(b64decode(doc.map.cost))
   sim.tick = doc.tick
   sim.rng.state = doc.rngState
   for (const e of doc.entities) {
@@ -91,6 +90,24 @@ export function deserialize(doc: SaveDoc): SimWorld {
   }
   sim.events = [...doc.events]
   return sim
+}
+
+function packUint16LE(values: Uint16Array): Uint8Array {
+  const out = new Uint8Array(values.length * 2)
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i]!
+    out[i * 2] = v & 0xff
+    out[i * 2 + 1] = (v >>> 8) & 0xff
+  }
+  return out
+}
+
+function unpackUint16LE(bytes: Uint8Array): Uint16Array {
+  const out = new Uint16Array(bytes.length / 2)
+  for (let i = 0; i < out.length; i++) {
+    out[i] = bytes[i * 2]! | (bytes[i * 2 + 1]! << 8)
+  }
+  return out
 }
 
 function b64encode(bytes: Uint8Array): string {
