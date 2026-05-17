@@ -32,9 +32,11 @@ export class EntityLayer {
       const spriteKey = species?.key
       let node: Graphics | Sprite
       if (spriteKey) {
-        node = this.ensureSprite(eid, spriteKey) ?? this.ensureGraphics(eid)
+        node = this.ensureSprite(eid, spriteKey, null) ?? this.ensureGraphics(eid)
       } else {
-        node = this.ensureGraphics(eid)
+        // Warden sprites are tint-based: pale / green / red picked from Renderable.tint.
+        const tint = Renderable.tint[eid] ?? 0xffffff
+        node = this.ensureSprite(eid, null, tint) ?? this.ensureGraphics(eid)
       }
       const px = Position.x[eid]! * TILE_SIZE + TILE_SIZE / 2
       const py = Position.y[eid]! * TILE_SIZE + TILE_SIZE / 2
@@ -65,10 +67,14 @@ export class EntityLayer {
     return g
   }
 
-  private ensureSprite(eid: number, key: string): Sprite | null {
+  private ensureSprite(eid: number, speciesKey: string | null, wardenTint: number | null): Sprite | null {
     let s = this.spriteByEid.get(eid)
     if (s) return s
-    const tex = this.cache.textureBySpeciesKey(key)
+    const tex = speciesKey
+      ? this.cache.textureBySpeciesKey(speciesKey)
+      : wardenTint !== null
+        ? this.cache.textureForWardenTint(wardenTint)
+        : null
     if (!tex) return null
     s = new Sprite(tex)
     s.anchor.set(0.5)

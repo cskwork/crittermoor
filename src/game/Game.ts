@@ -15,6 +15,7 @@ import { teamFromSpecies } from './Sim/Battle/buildTeam'
 import { tryTame } from './Sim/Critters/tame'
 
 const playerQuery = defineQuery([FactionComp, TilePos, Position])
+const entityAtTileQuery = defineQuery([TilePos])
 
 export class Game {
   private renderer: Renderer
@@ -161,23 +162,72 @@ export class Game {
     if (!sim || !client) return
     if (tx < 0 || ty < 0 || tx >= sim.map.width || ty >= sim.map.height) return
 
-    if (button === 0) {
-      if (shift) {
-        this.tryTameAt(sim, tx, ty)
-      } else {
-        this.toggleDesignation(sim, tx, ty)
+    if (button === 2) {
+      // Right-click always moves the player wardens.
+      const eids = playerQuery(sim.ecs)
+      for (let i = 0; i < eids.length; i++) {
+        const eid = eids[i]!
+        if (FactionComp.id[eid] !== Faction.Player) continue
+        this.requestPath(eid, TilePos.tx[eid]!, TilePos.ty[eid]!, tx, ty)
       }
       return
     }
 
-    // Right-click: move all player wardens to the clicked tile.
-    const eids = playerQuery(sim.ecs)
+    // Left-click branches on the active tool mode.
+    const mode = useUiStore.getState().toolMode
+    // Shift+left-click is a quick-tame shortcut regardless of mode.
+    if (shift) {
+      this.tryTameAt(sim, tx, ty)
+      return
+    }
+    switch (mode) {
+      case 'select':
+        this.selectAt(sim, tx, ty)
+        break
+      case 'chop':
+        this.designateAt(sim, tx, ty, 'chop')
+        break
+      case 'mine':
+        this.designateAt(sim, tx, ty, 'mine')
+        break
+      case 'tame':
+        this.tryTameAt(sim, tx, ty)
+        break
+      case 'cancel':
+        this.cancelDesignationAt(sim, tx, ty)
+        break
+    }
+  }
+
+  private selectAt(sim: SimWorld, tx: number, ty: number): void {
+    const eids = entityAtTileQuery(sim.ecs)
     for (let i = 0; i < eids.length; i++) {
       const eid = eids[i]!
-      if (FactionComp.id[eid] !== Faction.Player) continue
-      this.requestPath(eid, TilePos.tx[eid]!, TilePos.ty[eid]!, tx, ty)
+      if (TilePos.tx[eid] === tx && TilePos.ty[eid] === ty) {
+        useUiStore.getState().setSelected(eid)
+        return
+      }
     }
-    void shift
+    useUiStore.getState().setSelected(null)
+  }
+
+  private designateAt(sim: SimWorld, tx: number, ty: number, kind: 'chop' | 'mine'): void {
+    const key = ty * sim.map.width + tx
+    const terrain = sim.map.terrain[key]
+    if (kind === 'chop' && terrain !== Terrain.Forest) {
+      sim.events.push(`Chop needs a forest tile.`)
+      return
+    }
+    if (kind === 'mine' && terrain !== Terrain.Stone && terrain !== Terrain.Mountain) {
+      sim.events.push(`Mine needs a stone or mountain tile.`)
+      return
+    }
+    sim.designations.set(key, { kind, tx, ty })
+  }
+
+  private cancelDesignationAt(sim: SimWorld, tx: number, ty: number): void {
+    const key = ty * sim.map.width + tx
+    if (sim.designations.delete(key)) sim.events.push(`Cancelled designation at (${tx},${ty}).`)
   }
 
   private requestPath(eid: number, fromX: number, fromY: number, toX: number, toY: number): void {
@@ -223,19 +273,4 @@ export class Game {
     else if (res.reason === 'roll_failed') sim.events.push(`Tame attempt failed — try again.`)
   }
 
-  private toggleDesignation(sim: SimWorld, tx: number, ty: number): void {
-    const key = ty * sim.map.width + tx
-    if (sim.designations.has(key)) {
-      sim.designations.delete(key)
-      return
-    }
-    const terrain = sim.map.terrain[key]
-    if (terrain === Terrain.Forest) {
-      sim.designations.set(key, { kind: 'chop', tx, ty })
-    } else if (terrain === Terrain.Stone || terrain === Terrain.Mountain) {
-      sim.designations.set(key, { kind: 'mine', tx, ty })
-    } else {
-      sim.events.push(`Cannot designate work on terrain at (${tx},${ty}).`)
-    }
-  }
 }

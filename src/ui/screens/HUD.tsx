@@ -3,6 +3,9 @@ import { useUiStore, type SpeedSetting } from '@/app/stores/uiStore'
 import { listSaves, saveGame, loadGame } from '@/game/Sim/Saves/store'
 import type { SaveMeta } from '@/game/Sim/Saves/schema'
 import { dayOf, phaseOf } from '@/game/Sim/systems/time'
+import { Toolbar } from '@/ui/panels/Toolbar'
+import { SelectionPanel } from '@/ui/panels/SelectionPanel'
+import { EventsLog } from '@/ui/panels/EventsLog'
 
 const SPEEDS: SpeedSetting[] = [0, 1, 2, 4]
 const DEFAULT_SLOT = 'autosave'
@@ -98,8 +101,12 @@ export function HUD() {
       </div>
 
       <div className="hud-help panel" aria-label="Controls help">
-        Left-click forest/stone to designate · Right-click to send wardens · Middle-drag / Shift-drag to pan · Wheel to zoom · Space = pause · 1/2/3 = speed
+        Pick a tool · Left-click to act · Right-click to send wardens · Middle-drag / Shift-drag to pan · Wheel to zoom · Space = pause · 1/2/3 = speed
       </div>
+
+      <Toolbar />
+      <EventsLog />
+      <SelectionPanel />
 
       {status && <div className="hud-status panel">{status}</div>}
 

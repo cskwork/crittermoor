@@ -152,15 +152,24 @@ function nameShort(c: BattleCritter): string {
 function BattleStyles() {
   return (
     <style>{`
-      .battle-root { position:absolute; inset:0; display:grid; place-items:center; background: rgba(10,15,20,0.92); pointer-events:auto; }
-      .battle-panel { width: min(720px, 92vw); padding: 18px 20px; display:flex; flex-direction:column; gap:14px; }
-      .banner { display:flex; justify-content:space-between; align-items:baseline; color: var(--text-dim); }
-      .banner .win { color: var(--accent); font-size: 18px; }
-      .banner .lose { color: var(--danger); font-size: 18px; }
-      .arena { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-      .critter-card { display:flex; gap:12px; align-items:center; padding:10px; border:1px solid var(--panel-border); border-radius:8px; }
-      .critter-card.player { flex-direction: row-reverse; text-align: right; }
-      .portrait { width:56px; height:56px; border-radius:50%; flex-shrink:0; }
+      .battle-root { position:absolute; inset:0; display:grid; place-items:center;
+        background: radial-gradient(ellipse at center, rgba(20,30,40,0.88) 0%, rgba(8,12,16,0.96) 90%);
+        pointer-events:auto; animation: battleFadeIn 240ms ease-out; }
+      @keyframes battleFadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+      .battle-panel { width: min(760px, 94vw); padding: 22px 26px; display:flex; flex-direction:column; gap:16px;
+        box-shadow: 0 12px 48px rgba(0,0,0,0.5); border-color: rgba(168,208,141,0.25); }
+      .banner { display:flex; justify-content:space-between; align-items:baseline; color: var(--text-dim);
+        text-transform:uppercase; letter-spacing:0.08em; font-size:12px; }
+      .banner .win { color: var(--accent); font-size: 20px; animation: pulse 1.4s ease-in-out infinite; }
+      .banner .lose { color: var(--danger); font-size: 20px; animation: pulse 1.4s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+      .arena { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+      .critter-card { display:flex; gap:12px; align-items:center; padding:12px; border:1px solid var(--panel-border); border-radius:10px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%); }
+      .critter-card.enemy { border-color: rgba(224,122,95,0.3); }
+      .critter-card.player { flex-direction: row-reverse; text-align: right; border-color: rgba(168,208,141,0.3); }
+      .portrait { width:64px; height:64px; border-radius:14px; flex-shrink:0;
+        box-shadow: 0 0 18px rgba(255,255,255,0.06), inset 0 0 12px rgba(0,0,0,0.25); }
       .info { display:flex; flex-direction:column; gap:4px; flex:1; }
       .lvl { color: var(--text-dim); font-size:11px; }
       .type-chips { display:flex; gap:4px; }
