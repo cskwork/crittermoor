@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-17T08:35:38.152Z",
-  "updatedAt": "2026-05-17T09:05:20.991Z",
+  "updatedAt": "2026-05-17T09:12:13.602Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -119,10 +119,13 @@
       "id": "G010-save-v2-final-quality-gate",
       "title": "Save v2 + final quality gate",
       "objective": "Schema v2 preserves eids + Bond + Critter + battle outcome flags; migration v1->v2; golden-load fixture test; ai-slop-cleaner + verification + code-review all clean",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T08:35:38.152Z",
-      "updatedAt": "2026-05-17T08:35:38.152Z"
+      "updatedAt": "2026-05-17T09:12:13.602Z",
+      "startedAt": "2026-05-17T09:12:13.451Z",
+      "evidence": "Crittermoor Alpha 10/10 complete. Save schema v2 with raid persistence + v1->v2 migration + eid-remap for Bond cross-refs. 37/37 tests green. code-reviewer APPROVE after 3 critical fixes in f0a66ee (shift+click routing, Bond/Wild on load, raid scheduler save). Game loop: tame wild critter → critter follows partner → survive raid via battle UI → save → reload → resume.",
+      "completedAt": "2026-05-17T09:12:13.602Z"
     }
   ],
   "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-pawn-ai-v2-needs-driven-utility Pawn AI v2 (needs-driven utility); G002-wild-critter-entities-wander-ai Wild critter entities + wander AI; G003-capture-tame-mechanic Capture & tame mechanic; G004-critter-work-assignment-execution Critter work assignment + execution; G005-raid-event-battle-scene-trigger Raid event → battle scene trigger; G006-battlescreen-ui-wired-to-battlesim BattleScreen UI wired to BattleSim; G007-day-night-cycle-visuals-nocturnal Day/night cycle visuals + nocturnal; G008-tilemap-chunking-perf-hardening Tilemap chunking + perf hardening; G009-codex-sprite-generation-atlas Codex sprite generation + atlas; G010-save-v2-final-quality-gate Save v2 + final quality gate"
