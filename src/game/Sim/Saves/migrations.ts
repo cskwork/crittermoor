@@ -17,6 +17,6 @@ function v1ToV2(v1: SaveDocV1): SaveDocV2 {
   return {
     ...v1,
     version: 2,
-    nextRaidTick: undefined,
+    raid: undefined,
   }
 }

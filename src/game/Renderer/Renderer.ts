@@ -119,7 +119,7 @@ export class Renderer {
   }
 
   private onLeftClick = (e: MouseEvent): void => {
-    if (e.button !== 0 || e.shiftKey) return
+    if (e.button !== 0) return
     this.dispatchTile(e, 0)
   }
 

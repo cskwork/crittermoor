@@ -1,4 +1,4 @@
-import { defineQuery, hasComponent } from 'bitecs'
+import { addComponent, defineQuery, hasComponent, removeComponent } from 'bitecs'
 import {
   Bond,
   Critter,
@@ -9,11 +9,14 @@ import {
   Position,
   Renderable,
   TilePos,
+  Wild,
 } from '../components'
+import { Faction } from '@/shared/constants'
 import { createSimWorld, spawnWarden, type SimWorld } from '../world'
 import { SAVE_VERSION, type EntitySnapshot, type SaveDoc } from './schema'
 import { migrateToCurrent } from './migrations'
 import { spawnCritter } from '../Critters/spawn'
+import { getRaidState, setRaidState } from '../systems/raid'
 
 const allQuery = defineQuery([Position, TilePos, FactionComp])
 
@@ -78,6 +81,7 @@ export function serialize(sim: SimWorld): SaveDoc {
     entities,
     designations: Array.from(sim.designations.values()),
     events: sim.events.slice(-50),
+    raid: getRaidState(sim) ?? undefined,
   }
 }
 
@@ -122,15 +126,21 @@ export function deserialize(input: SaveDoc): SimWorld {
     const me = eidRemap.get(e.eid)
     const partner = eidRemap.get(e.bond.partnerEid)
     if (me === undefined || partner === undefined) continue
-    if (!hasComponent(sim.ecs, Bond, me)) continue
+    if (!hasComponent(sim.ecs, Bond, me)) {
+      addComponent(sim.ecs, Bond, me)
+    }
     Bond.partnerEid[me] = partner
     Bond.level[me] = e.bond.level
+    // A bonded critter is no longer wild.
+    if (hasComponent(sim.ecs, Wild, me)) removeComponent(sim.ecs, Wild, me)
+    FactionComp.id[me] = Faction.Player
   }
   for (const d of doc.designations) {
     const key = d.ty * sim.map.width + d.tx
     sim.designations.set(key, d)
   }
   sim.events = [...doc.events]
+  if (doc.raid) setRaidState(sim, { nextRaidTick: doc.raid.nextRaidTick, scheduled: doc.raid.scheduled })
   return sim
 }
 

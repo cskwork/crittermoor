@@ -37,7 +37,7 @@ export interface SaveDocV1 {
 
 export interface SaveDocV2 extends Omit<SaveDocV1, 'version'> {
   version: 2
-  nextRaidTick?: number
+  raid?: { nextRaidTick: number; scheduled: boolean }
 }
 
 export type SaveDoc = SaveDocV1 | SaveDocV2

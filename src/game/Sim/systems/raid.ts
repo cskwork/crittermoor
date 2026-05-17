@@ -14,13 +14,24 @@ export interface RaidState {
   scheduled: boolean
 }
 
+interface SimWithRaid { _raid?: RaidState }
+
 export function ensureRaidState(sim: SimWorld): RaidState {
-  const w = sim as unknown as { _raid?: RaidState }
+  const w = sim as unknown as SimWithRaid
   if (!w._raid) {
     const ticksToFirst = DAY_LENGTH_TICKS * MIN_DAYS_TO_FIRST_RAID
     w._raid = { nextRaidTick: sim.tick + ticksToFirst, scheduled: true }
   }
   return w._raid
+}
+
+export function getRaidState(sim: SimWorld): RaidState | null {
+  return (sim as unknown as SimWithRaid)._raid ?? null
+}
+
+export function setRaidState(sim: SimWorld, state: RaidState): void {
+  const w = sim as unknown as SimWithRaid
+  w._raid = state
 }
 
 export function makeRaidSystem(hooks: RaidHooks) {

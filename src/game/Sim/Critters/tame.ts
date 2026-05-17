@@ -1,13 +1,13 @@
-import { defineQuery } from 'bitecs'
+import { addComponent, defineQuery, hasComponent, removeComponent } from 'bitecs'
 import {
   Bond,
   Critter,
   Faction as FactionComp,
   Health,
   TilePos,
+  Wild,
 } from '../components'
 import { Faction } from '@/shared/constants'
-import { addComponent } from 'bitecs'
 import type { SimWorld } from '../world'
 
 const critterQuery = defineQuery([Critter, FactionComp, TilePos, Health])
@@ -42,6 +42,7 @@ export function tryTame(sim: SimWorld, wardenEid: number, tx: number, ty: number
   if (!sim.rng.chance(chance)) return { ok: false, reason: 'roll_failed', critterEid: target }
 
   FactionComp.id[target] = Faction.Player
+  if (hasComponent(sim.ecs, Wild, target)) removeComponent(sim.ecs, Wild, target)
   addComponent(sim.ecs, Bond, target)
   Bond.partnerEid[target] = wardenEid
   Bond.level[target] = 20
