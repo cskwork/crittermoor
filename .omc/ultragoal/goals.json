@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-17T07:47:22.716Z",
-  "updatedAt": "2026-05-17T08:22:46.143Z",
+  "updatedAt": "2026-05-17T08:29:56.375Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -167,10 +167,13 @@
       "id": "G014-final-quality-gate",
       "title": "Final Quality Gate",
       "objective": "ai-slop-cleaner + verification + code-review all clean — ready to ship",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-17T07:47:22.716Z",
-      "updatedAt": "2026-05-17T07:47:22.716Z"
+      "updatedAt": "2026-05-17T08:29:56.375Z",
+      "startedAt": "2026-05-17T08:28:04.021Z",
+      "evidence": "Crittermoor MVP pre-alpha complete. 22/22 vitest, lint 0, build 198 KB gzip (budget 600 KB). code-reviewer (Opus): PASS_WITH_NOTES, recommendation APPROVE, architect status CLEAR; 3 shipping-impact HIGH findings fixed (commit 8d92182); remaining HIGH items deferred and tracked.",
+      "completedAt": "2026-05-17T08:29:56.375Z"
     }
   ],
   "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-research-architecture-spec Research & Architecture Spec; G002-project-scaffold Project Scaffold; G003-world-tilemap World & Tilemap; G004-ecs-core-sim-loop ECS Core & Sim Loop; G005-pawns-needs Pawns & Needs; G006-job-system Job System; G007-critter-system Critter System; G008-turn-based-battle Turn-Based Battle; G009-ui-shell UI Shell; G010-save-load-procedural-world-gen Save/Load + Procedural World Gen; G011-asset-pipeline-codex Asset Pipeline (Codex); G012-polish-tutorial Polish & Tutorial; G013-production-hardening Production Hardening; G014-final-quality-gate Final Quality Gate"
