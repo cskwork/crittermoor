@@ -3,7 +3,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
+// GH Pages serves from `<user>.github.io/<repo>/`, so production assets need the repo prefix.
+// `npm run dev` keeps the default `/` base.
+const base = process.env.GITHUB_PAGES === '1' ? '/crittermoor/' : '/'
+
 export default defineConfig({
+  base,
   plugins: [react()],
   resolve: {
     alias: {
