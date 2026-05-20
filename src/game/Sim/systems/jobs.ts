@@ -6,11 +6,17 @@ import { addComponent } from 'bitecs'
 import { Behavior } from './behavior'
 import { sound } from '@/audio/SoundManager'
 import { getPriorities, isDrafted } from '../agency'
+import { dropItem } from '../Items/spawn'
+import { ItemKind } from '../Items/defs'
+import { tryPickup } from './haul'
+import { Item } from '../components'
 
 export enum JobKind {
   None = 0,
   Chop = 1,
   Mine = 2,
+  Haul = 3,
+  HaulCarrying = 4,
 }
 
 export enum JobState {
@@ -54,9 +60,29 @@ export function makeJobSystem(hooks: JobsHooks) {
         case JobKind.Mine:
           progressJob(sim, eid)
           break
+        case JobKind.Haul:
+          progressHaulPickup(sim, eid)
+          break
+        case JobKind.HaulCarrying:
+          // Carry component drives the walk; haul.ts handles arrival.
+          break
       }
     }
   }
+}
+
+function progressHaulPickup(sim: SimWorld, eid: number): void {
+  const itemEid = Job.targetEid[eid] ?? 0
+  if (itemEid <= 0 || !hasComponent(sim.ecs, Item, itemEid)) {
+    clearJob(eid)
+    return
+  }
+  const arrived = TilePos.tx[eid] === TilePos.tx[itemEid] && TilePos.ty[eid] === TilePos.ty[itemEid]
+  if (!arrived) {
+    Job.state[eid] = JobState.Moving
+    return
+  }
+  tryPickup(sim, eid, itemEid)
 }
 
 function assignBestDesignation(sim: SimWorld, eid: number, hooks: JobsHooks): void {
@@ -121,8 +147,16 @@ function progressJob(sim: SimWorld, eid: number): void {
     if (designation.kind === 'chop' && (Skills.construct[eid] ?? 0) < 20) Skills.construct[eid]!++
     if (designation.kind === 'mine' && (Skills.mine[eid] ?? 0) < 20) Skills.mine[eid]!++
   }
-  if (designation.kind === 'chop') sim.resources.wood += 2
-  else sim.resources.stone += 2
+  const dropKind: ItemKind = designation.kind === 'chop' ? ItemKind.Wood : ItemKind.Stone
+  const dropQty = 2
+  const tileKey = designation.ty * sim.map.width + designation.tx
+  if (sim.stockpiles.has(tileKey)) {
+    // Dropped straight into the colony pool when the chop/mine tile happens to be a stockpile.
+    if (dropKind === ItemKind.Wood) sim.resources.wood += dropQty
+    else sim.resources.stone += dropQty
+  } else {
+    dropItem(sim, dropKind, designation.tx, designation.ty, dropQty)
+  }
   sound.play(designation.kind === 'chop' ? 'chop_wood' : 'mine_stone')
   sim.events.push(
     `${designation.kind === 'chop' ? 'Chopped (+2 wood)' : 'Mined (+2 stone)'} at (${designation.tx},${designation.ty}).`,

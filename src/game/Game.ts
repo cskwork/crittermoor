@@ -64,6 +64,9 @@ export class Game {
       construct: {
         requestPath: (eid, fromX, fromY, toX, toY) => this.requestPath(eid, fromX, fromY, toX, toY),
       },
+      haul: {
+        requestPath: (eid, fromX, fromY, toX, toY) => this.requestPath(eid, fromX, fromY, toX, toY),
+      },
     })
     this.scheduler = new TickScheduler(sim, () => this.renderer.draw(sim), tick)
     this.scheduler.start()
@@ -187,6 +190,7 @@ export class Game {
       jobs: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
       raid: { onRaid: (ids) => this.triggerRaid(ids) },
       construct: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
+      haul: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
     })
     this.scheduler = new TickScheduler(loaded, () => this.renderer.draw(loaded), tick)
     this.scheduler.start()
@@ -258,6 +262,20 @@ export class Game {
       case 'build':
         this.tryPlaceBlueprint(sim, tx, ty)
         break
+      case 'stockpile':
+        this.toggleStockpile(sim, tx, ty)
+        break
+    }
+  }
+
+  private toggleStockpile(sim: SimWorld, tx: number, ty: number): void {
+    const key = ty * sim.map.width + tx
+    if (sim.stockpiles.has(key)) {
+      sim.stockpiles.delete(key)
+      sim.events.push(`Cleared stockpile at (${tx},${ty}).`)
+    } else {
+      sim.stockpiles.add(key)
+      sim.events.push(`Marked stockpile at (${tx},${ty}).`)
     }
   }
 

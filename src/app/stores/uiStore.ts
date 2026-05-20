@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 export type Screen = 'title' | 'colony' | 'battle'
 export type SpeedSetting = 0 | 1 | 2 | 4
-export type ToolMode = 'select' | 'chop' | 'mine' | 'tame' | 'cancel' | 'build'
+export type ToolMode = 'select' | 'chop' | 'mine' | 'tame' | 'cancel' | 'build' | 'stockpile'
 
 interface UiState {
   screen: Screen

@@ -1,7 +1,7 @@
 import { Container, Graphics, Sprite } from 'pixi.js'
 import { TILE_SIZE } from '@/shared/constants'
 import type { SimWorld } from '../Sim/world'
-import { Critter, Position, Renderable, Structure } from '../Sim/components'
+import { Critter, Item, Position, Renderable, Structure } from '../Sim/components'
 import { defineQuery, hasComponent } from 'bitecs'
 import { speciesById } from '../Sim/Critters/species'
 import { STRUCTURES, type StructureKind } from '../Sim/Structures/defs'
@@ -13,6 +13,7 @@ type SpriteRef =
   | { kind: 'critter'; speciesKey: string }
   | { kind: 'warden'; tint: number }
   | { kind: 'structure'; key: string; blueprint: boolean }
+  | { kind: 'item'; tint: number }
 
 export class EntityLayer {
   readonly container: Container
@@ -70,20 +71,29 @@ export class EntityLayer {
       const species = speciesById(Critter.speciesId[eid] ?? 0)
       return { kind: 'critter', speciesKey: species?.key ?? 'spritmoth' }
     }
+    if (hasComponent(sim.ecs, Item, eid)) {
+      return { kind: 'item', tint: Renderable.tint[eid] ?? 0x9a6f47 }
+    }
     return { kind: 'warden', tint: Renderable.tint[eid] ?? 0xffffff }
   }
 
   private ensureNode(eid: number, ref: SpriteRef): Graphics | Sprite {
     const sprite = this.ensureSprite(eid, ref)
     if (sprite) return sprite
-    return this.ensureGraphics(eid)
+    return this.ensureGraphics(eid, ref)
   }
 
-  private ensureGraphics(eid: number): Graphics {
+  private ensureGraphics(eid: number, ref?: SpriteRef): Graphics {
     let g = this.graphicsByEid.get(eid)
     if (!g) {
       g = new Graphics()
-      g.circle(0, 0, 8).fill(Renderable.tint[eid] ?? 0xffffff)
+      const tint = Renderable.tint[eid] ?? 0xffffff
+      if (ref && ref.kind === 'item') {
+        // Items render as a small filled diamond so players can read them as drops.
+        g.poly([0, -6, 6, 0, 0, 6, -6, 0]).fill(tint).stroke({ width: 1, color: 0x222222 })
+      } else {
+        g.circle(0, 0, 8).fill(tint)
+      }
       this.container.addChild(g)
       this.graphicsByEid.set(eid, g)
     }
@@ -96,6 +106,7 @@ export class EntityLayer {
     let tex
     if (ref.kind === 'critter') tex = this.cache.textureBySpeciesKey(ref.speciesKey)
     else if (ref.kind === 'warden') tex = this.cache.textureForWardenTint(ref.tint)
+    else if (ref.kind === 'item') tex = null // fall through to Graphics dot
     else tex = this.cache.textureForStructureKey(ref.key)
     if (!tex) return null
     s = new Sprite(tex)

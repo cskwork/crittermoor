@@ -45,3 +45,11 @@ export const Structure = defineComponent({
   progress: Types.ui16,
   facing: Types.ui8,
 })
+
+// Dropped item piles. kind = ItemKind enum; qty = stack count.
+// reservedBy 0 = free, otherwise the warden eid currently hauling this stack.
+export const Item = defineComponent({ kind: Types.ui8, qty: Types.ui16, reservedBy: Types.ui32 })
+
+// Carrying state on a warden. While carrying, the warden walks to the
+// destination tile and drops the stack on arrival.
+export const Carry = defineComponent({ kind: Types.ui8, qty: Types.ui16, destX: Types.i16, destY: Types.i16, sourceEid: Types.ui32 })

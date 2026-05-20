@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T10:43:31.553Z",
+  "updatedAt": "2026-05-20T10:49:09.957Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -23,11 +23,13 @@
       "id": "G002-player-agency",
       "title": "Player agency",
       "objective": "WorkPriority grid (per-warden x worktype, 0-4), 24h Schedule grid (Sleep/Work/Joy/Anything), Draft mode (click orders override autonomy), unified Priority+Schedule panel (CMR-031/032/039/040)",
-      "status": "in_progress",
+      "status": "complete",
       "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:43:31.553Z",
-      "startedAt": "2026-05-20T10:43:31.553Z"
+      "updatedAt": "2026-05-20T10:49:09.957Z",
+      "startedAt": "2026-05-20T10:43:31.553Z",
+      "completedAt": "2026-05-20T10:49:09.957Z",
+      "evidence": "Landed CMR-031/032/039/040 in 0b68cc2. 70/70 vitest (+9 new agency tests). Lint zero warnings, typecheck strict clean, build 250 KB gzip JS. New module src/game/Sim/agency.ts + src/ui/panels/PrioritiesPanel.tsx. SimWorld.agency side-maps hold WorkPriority + Schedule + Draft; jobs/construct/behavior systems honor them. Right-click in Game.handleTileClick routes only to drafted wardens when any exist. P-hotkey + HUD button open the panel. Known limitation: agency state is not yet in SaveDoc v3 — picked up by F007 v4 migration."
     },
     {
       "id": "G003-economic-depth",
@@ -75,6 +77,5 @@
       "updatedAt": "2026-05-20T10:29:18.647Z"
     }
   ],
-  "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-drain-in-flight-pipeline Drain in-flight pipeline; G002-player-agency Player agency; G003-economic-depth Economic depth; G004-creature-depth Creature depth; G005-world-variety-combat-scaling World variety + combat scaling; G006-polish Polish; G007-save-v4-determinism-replay-final-qua Save v4 + determinism replay + final quality gate",
-  "activeGoalId": "G002-player-agency"
+  "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-drain-in-flight-pipeline Drain in-flight pipeline; G002-player-agency Player agency; G003-economic-depth Economic depth; G004-creature-depth Creature depth; G005-world-variety-combat-scaling World variety + combat scaling; G006-polish Polish; G007-save-v4-determinism-replay-final-qua Save v4 + determinism replay + final quality gate"
 }

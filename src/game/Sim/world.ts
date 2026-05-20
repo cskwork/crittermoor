@@ -36,6 +36,9 @@ export interface SimWorld {
   resources: ColonyResources
   events: string[]
   agency: AgencyState
+  // Tile-key set of stockpile tiles. Items dropped on these tiles are
+  // considered stored; loose items elsewhere become Haul targets.
+  stockpiles: Set<number>
 }
 
 export function createSimWorld(seed: number): SimWorld {
@@ -60,6 +63,7 @@ export function createSimWorld(seed: number): SimWorld {
     resources: { wood: 30, stone: 30 },
     events: [],
     agency: createAgency(),
+    stockpiles: new Set(),
   }
 }
 
