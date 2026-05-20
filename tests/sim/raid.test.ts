@@ -29,7 +29,7 @@ describe('raid scheduler', () => {
     r.nextRaidTick = 12345
     r.scheduled = true
     const doc = serialize(sim)
-    expect(doc.version).toBe(3)
+    expect(doc.version).toBe(4)
     const restored = deserialize(doc)
     const after = getRaidState(restored)
     expect(after?.nextRaidTick).toBe(12345)

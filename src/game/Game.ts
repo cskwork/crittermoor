@@ -7,7 +7,7 @@ import { generateWorld } from './Sim/Gen/worldGen'
 import { createPathClient, type PathClient } from './Sim/Pathing/PathClient'
 import { defineQuery, removeEntity } from 'bitecs'
 import { Faction as FactionComp, Position, Structure, TilePos } from './Sim/components'
-import { Faction, Terrain } from '@/shared/constants'
+import { Faction, TICKS_PER_SECOND_1X, Terrain } from '@/shared/constants'
 import { makeRunTick } from './Sim/tick'
 import { createBattleState, type BattleAction, type BattleCritter, type Side } from './Sim/Battle/BattleState'
 import { executeTurn, isBattleOver } from './Sim/Battle/BattleSim'
@@ -15,9 +15,15 @@ import { teamFromSpecies } from './Sim/Battle/buildTeam'
 import { tryTame } from './Sim/Critters/tame'
 import { STRUCTURES, type StructureKind } from './Sim/Structures/defs'
 import { spawnBlueprint } from './Sim/Structures/spawn'
+import { AUTOSAVE_SLOT, saveGame } from './Sim/Saves/store'
+import { plantFarm, removeFarm } from './Sim/systems/farm'
 
 const playerQuery = defineQuery([FactionComp, TilePos, Position])
 const entityAtTileQuery = defineQuery([TilePos])
+
+// Autosave fires when `tick` has advanced by this many ticks since the last
+// successful autosave write. 60 sim-seconds at 1x = 8 ticks/sec * 60.
+const AUTOSAVE_INTERVAL_TICKS = TICKS_PER_SECOND_1X * 60
 
 export class Game {
   private renderer: Renderer
@@ -26,6 +32,9 @@ export class Game {
   private pathClient: PathClient | null = null
   private booted = false
   private pendingActions: [BattleAction | null, BattleAction | null] = [null, null]
+  private autosaveTimer: number | null = null
+  private lastAutosaveTick = 0
+  private autosaving = false
 
   constructor(host: HTMLDivElement) {
     this.renderer = new Renderer(host)
@@ -56,6 +65,9 @@ export class Game {
       construct: {
         requestPath: (eid, fromX, fromY, toX, toY) => this.requestPath(eid, fromX, fromY, toX, toY),
       },
+      haul: {
+        requestPath: (eid, fromX, fromY, toX, toY) => this.requestPath(eid, fromX, fromY, toX, toY),
+      },
     })
     this.scheduler = new TickScheduler(sim, () => this.renderer.draw(sim), tick)
     this.scheduler.start()
@@ -65,9 +77,11 @@ export class Game {
     const w = window as unknown as {
       __crittermoorGame: { sim: SimWorld }
       __crittermoorApplyLoad: (loaded: SimWorld) => void
+      __crittermoorPlayerEids: () => number[]
     }
     w.__crittermoorGame = { sim }
     w.__crittermoorApplyLoad = (loaded) => this.applyLoaded(loaded)
+    w.__crittermoorPlayerEids = () => this.playerEids()
     ;(window as unknown as { __crittermoorTestBattle: () => void }).__crittermoorTestBattle = () =>
       this.startTestBattle()
 
@@ -76,6 +90,42 @@ export class Game {
       (side, action) => this.recordBattleAction(side, action),
       (winner) => this.endBattle(winner),
     )
+
+    this.startAutosave()
+  }
+
+  private startAutosave(): void {
+    this.stopAutosave()
+    this.lastAutosaveTick = this.sim?.tick ?? 0
+    // Poll every 2 real-seconds; fires when sim has advanced AUTOSAVE_INTERVAL_TICKS.
+    this.autosaveTimer = window.setInterval(() => this.maybeAutosave(), 2000)
+  }
+
+  private stopAutosave(): void {
+    if (this.autosaveTimer !== null) {
+      clearInterval(this.autosaveTimer)
+      this.autosaveTimer = null
+    }
+  }
+
+  private maybeAutosave(): void {
+    const sim = this.sim
+    if (!sim || this.autosaving) return
+    if (useUiStore.getState().screen !== 'colony') return
+    if (sim.tick - this.lastAutosaveTick < AUTOSAVE_INTERVAL_TICKS) return
+    this.autosaving = true
+    const targetTick = sim.tick
+    saveGame(AUTOSAVE_SLOT, sim, 'Autosave')
+      .then(() => {
+        this.lastAutosaveTick = targetTick
+        sim.events.push(`Autosaved at tick ${targetTick}.`)
+      })
+      .catch((err: unknown) => {
+        sim.events.push(`Autosave failed: ${String(err)}`)
+      })
+      .finally(() => {
+        this.autosaving = false
+      })
   }
 
   startTestBattle(): void {
@@ -130,6 +180,7 @@ export class Game {
   }
 
   private applyLoaded(loaded: SimWorld): void {
+    this.stopAutosave()
     this.scheduler?.stop()
     this.pathClient?.dispose()
     if (this.sim) destroyWorld(this.sim)
@@ -140,14 +191,17 @@ export class Game {
       jobs: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
       raid: { onRaid: (ids) => this.triggerRaid(ids) },
       construct: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
+      haul: { requestPath: (eid, fx, fy, tx2, ty2) => this.requestPath(eid, fx, fy, tx2, ty2) },
     })
     this.scheduler = new TickScheduler(loaded, () => this.renderer.draw(loaded), tick)
     this.scheduler.start()
+    this.startAutosave()
     const w = window as unknown as { __crittermoorGame: { sim: SimWorld } }
     w.__crittermoorGame = { sim: loaded }
   }
 
   dispose(disposeRenderer = true): void {
+    this.stopAutosave()
     this.scheduler?.stop()
     this.scheduler = null
     this.pathClient?.dispose()
@@ -169,12 +223,16 @@ export class Game {
     if (tx < 0 || ty < 0 || tx >= sim.map.width || ty >= sim.map.height) return
 
     if (button === 2) {
-      // Right-click always moves the player wardens.
+      // Right-click sends drafted wardens to the target if any exist;
+      // otherwise falls back to moving all player wardens (legacy behavior).
       const eids = playerQuery(sim.ecs)
+      const hasDrafted = sim.agency.drafted.size > 0
       for (let i = 0; i < eids.length; i++) {
         const eid = eids[i]!
         if (FactionComp.id[eid] !== Faction.Player) continue
+        if (hasDrafted && !sim.agency.drafted.has(eid)) continue
         this.requestPath(eid, TilePos.tx[eid]!, TilePos.ty[eid]!, tx, ty)
+        if (hasDrafted) sim.agency.draftTargets.set(eid, { tx, ty })
       }
       return
     }
@@ -205,6 +263,28 @@ export class Game {
       case 'build':
         this.tryPlaceBlueprint(sim, tx, ty)
         break
+      case 'stockpile':
+        this.toggleStockpile(sim, tx, ty)
+        break
+      case 'farm':
+        if (!plantFarm(sim, tx, ty)) {
+          if (removeFarm(sim, tx, ty)) sim.events.push(`Cleared farm at (${tx},${ty}).`)
+          else sim.events.push(`Cannot plant here (water/mountain/already planted).`)
+        } else {
+          sim.events.push(`Planted farm at (${tx},${ty}).`)
+        }
+        break
+    }
+  }
+
+  private toggleStockpile(sim: SimWorld, tx: number, ty: number): void {
+    const key = ty * sim.map.width + tx
+    if (sim.stockpiles.has(key)) {
+      sim.stockpiles.delete(key)
+      sim.events.push(`Cleared stockpile at (${tx},${ty}).`)
+    } else {
+      sim.stockpiles.add(key)
+      sim.events.push(`Marked stockpile at (${tx},${ty}).`)
     }
   }
 
@@ -280,6 +360,18 @@ export class Game {
       removeEntity(sim.ecs, bpEid)
       sim.events.push(`Cancelled blueprint at (${tx},${ty}). 50% refund.`)
     }
+  }
+
+  private playerEids(): number[] {
+    const sim = this.sim
+    if (!sim) return []
+    const eids = playerQuery(sim.ecs)
+    const out: number[] = []
+    for (let i = 0; i < eids.length; i++) {
+      const eid = eids[i]!
+      if (FactionComp.id[eid] === Faction.Player) out.push(eid)
+    }
+    return out
   }
 
   private requestPath(eid: number, fromX: number, fromY: number, toX: number, toY: number): void {

@@ -4,6 +4,7 @@ import { MAP_DEFAULT_H, MAP_DEFAULT_W, Terrain } from '@/shared/constants'
 import { Faction as FactionComp, HasPath, Health, Needs, Pawn, Position, PositionPrev, Renderable, Skills, TilePos } from './components'
 import { Faction } from '@/shared/constants'
 import { PathStorage } from './Pathing/PathStorage'
+import { createAgency, type AgencyState } from './agency'
 
 export interface TileMap {
   width: number
@@ -34,6 +35,20 @@ export interface SimWorld {
   blueprints: Map<number, number> // tile-key → structure eid (state=blueprint)
   resources: ColonyResources
   events: string[]
+  agency: AgencyState
+  // Tile-key set of stockpile tiles. Items dropped on these tiles are
+  // considered stored; loose items elsewhere become Haul targets.
+  stockpiles: Set<number>
+  // Per-critter trait roll (sparse: only critters get entries).
+  traits: Map<number, import('./Critters/traits').TraitId>
+  // Per-creature home anchor tile (for wild-AI v2 home-range behavior).
+  homeAnchors: Map<number, { tx: number; ty: number }>
+  // Tile-key set of door tiles. Wild AI refuses to step onto these so doors
+  // block enemies but freely pass player wardens.
+  factionDoorTiles: Set<number>
+  // Farm plots: tileKey → growthTicks (0 = planted, GROW_TICKS = mature).
+  // When ready, the warden with plant priority > 0 harvests for RawFood.
+  farms: Map<number, number>
 }
 
 export function createSimWorld(seed: number): SimWorld {
@@ -57,6 +72,12 @@ export function createSimWorld(seed: number): SimWorld {
     blueprints: new Map(),
     resources: { wood: 30, stone: 30 },
     events: [],
+    agency: createAgency(),
+    stockpiles: new Set(),
+    traits: new Map(),
+    homeAnchors: new Map(),
+    factionDoorTiles: new Set(),
+    farms: new Map(),
   }
 }
 

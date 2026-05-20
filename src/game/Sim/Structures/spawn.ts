@@ -9,7 +9,7 @@ import {
 } from '../components'
 import { Faction, TERRAIN_COST } from '@/shared/constants'
 import type { SimWorld } from '../world'
-import { STRUCTURES, type StructureKind } from './defs'
+import { STRUCTURES, StructureKind } from './defs'
 
 export function spawnBlueprint(sim: SimWorld, kind: StructureKind, tx: number, ty: number): number {
   return spawnStructure(sim, kind, tx, ty, /* complete */ false)
@@ -51,6 +51,7 @@ export function applyPathCost(sim: SimWorld, kind: StructureKind, tx: number, ty
   const i = ty * sim.map.width + tx
   if (def.blocksPath) sim.map.cost[i] = 0
   else if (sim.map.cost[i] === 0) sim.map.cost[i] = 10 // restore passable
+  if (kind === StructureKind.Door) sim.factionDoorTiles.add(i)
 }
 
 export function clearPathCost(sim: SimWorld, tx: number, ty: number, terrain: number): void {

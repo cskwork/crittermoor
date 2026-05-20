@@ -16,7 +16,7 @@ module.exports = {
     'plugin:react-hooks/recommended',
   ],
   settings: { react: { version: 'detect' } },
-  ignorePatterns: ['dist', 'node_modules', 'coverage', 'generated', '*.cjs', '.tsbuild', 'src/**/*.js', 'src/**/*.d.ts', 'tests/**/*.js', 'tests/**/*.d.ts'],
+  ignorePatterns: ['dist', 'node_modules', 'coverage', 'generated', '*.cjs', '.tsbuild', 'src/**/*.js', 'src/**/*.d.ts', 'tests/**/*.js', 'tests/**/*.d.ts', 'skills/**', 'tools/**', 'docs/**'],
   rules: {
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',

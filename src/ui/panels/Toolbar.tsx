@@ -1,5 +1,6 @@
 import { useUiStore, type ToolMode } from '@/app/stores/uiStore'
 import { STRUCTURE_LIST } from '@/game/Sim/Structures/defs'
+import { sound } from '@/audio/SoundManager'
 
 interface ToolDef {
   id: ToolMode
@@ -14,6 +15,8 @@ const TOOLS: ToolDef[] = [
   { id: 'chop', label: 'Chop', icon: '🌲', hotkey: 'C', hint: 'Click a forest tile' },
   { id: 'mine', label: 'Mine', icon: '⛏', hotkey: 'M', hint: 'Click a stone tile' },
   { id: 'build', label: 'Build', icon: '⌂', hotkey: 'B', hint: 'Pick a structure, then click a tile' },
+  { id: 'stockpile', label: 'Stockpile', icon: '▤', hotkey: 'Z', hint: 'Click a tile to mark / unmark a stockpile' },
+  { id: 'farm', label: 'Farm', icon: '✿', hotkey: 'F', hint: 'Click a soil tile to plant; harvests as raw food when ripe' },
   { id: 'tame', label: 'Tame', icon: '✦', hotkey: 'T', hint: 'Click a weakened wild critter' },
   { id: 'cancel', label: 'Cancel', icon: '✕', hotkey: 'X', hint: 'Click a designation or blueprint' },
 ]
@@ -33,9 +36,11 @@ export function Toolbar() {
             key={t.id}
             className={t.id === toolMode ? 'tool active' : 'tool'}
             onClick={() => {
+              sound.play('ui_click')
               setToolMode(t.id)
               if (t.id === 'build' && buildKind === 0) setBuildKind(STRUCTURE_LIST[0]!.kind)
             }}
+            onMouseEnter={() => sound.play('ui_hover')}
             aria-pressed={t.id === toolMode}
             title={`${t.label} (${t.hotkey})`}
           >
