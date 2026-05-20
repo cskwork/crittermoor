@@ -14,22 +14,27 @@ import {
 } from '../components'
 import { Faction } from '@/shared/constants'
 import { createSimWorld, spawnWarden, type SimWorld } from '../world'
-import { SAVE_VERSION, SaveCorruptError, type EntitySnapshot, type SaveDoc } from './schema'
+import { SAVE_VERSION, SaveCorruptError, type EntityV4Snapshot, type SaveDoc } from './schema'
 import { migrateToCurrent } from './migrations'
 import { crc32String } from './crc32'
 import { spawnCritter } from '../Critters/spawn'
 import { spawnBlueprint, spawnCompleteStructure } from '../Structures/spawn'
 import type { StructureKind } from '../Structures/defs'
 import { getRaidState, setRaidState } from '../systems/raid'
+import type { TraitId } from '../Critters/traits'
+import { dropItem } from '../Items/spawn'
+import type { ItemKind } from '../Items/defs'
+import { Item } from '../components'
 
 const allQuery = defineQuery([Position, TilePos, FactionComp])
+const itemQuery = defineQuery([Item, TilePos])
 
 export function serialize(sim: SimWorld): SaveDoc {
-  const entities: EntitySnapshot[] = []
+  const entities: EntityV4Snapshot[] = []
   const eids = allQuery(sim.ecs)
   for (let i = 0; i < eids.length; i++) {
     const eid = eids[i]!
-    const snap: EntitySnapshot = {
+    const snap: EntityV4Snapshot = {
       eid,
       pos: { x: Position.x[eid]!, y: Position.y[eid]! },
       tile: { tx: TilePos.tx[eid]!, ty: TilePos.ty[eid]! },
@@ -75,7 +80,32 @@ export function serialize(sim: SimWorld): SaveDoc {
       }
     }
     void Pawn
+    // v4 additions: per-critter trait + home anchor.
+    const trait = sim.traits.get(eid)
+    if (trait && trait !== 'none') snap.trait = trait
+    const home = sim.homeAnchors.get(eid)
+    if (home) snap.homeAnchor = { tx: home.tx, ty: home.ty }
     entities.push(snap)
+  }
+  const items: { tx: number; ty: number; kind: number; qty: number }[] = []
+  const itemEids = itemQuery(sim.ecs)
+  for (let i = 0; i < itemEids.length; i++) {
+    const eid = itemEids[i]!
+    items.push({
+      tx: TilePos.tx[eid] ?? 0,
+      ty: TilePos.ty[eid] ?? 0,
+      kind: Item.kind[eid] ?? 0,
+      qty: Item.qty[eid] ?? 0,
+    })
+  }
+  const agencyEntries: { eid: number; priorities: { chop: number; mine: number; build: number; tame: number; haul: number }; schedule: number[]; drafted: boolean }[] = []
+  for (const [eid, pri] of sim.agency.priorities) {
+    agencyEntries.push({
+      eid,
+      priorities: { ...pri },
+      schedule: Array.from(sim.agency.schedules.get(eid) ?? []),
+      drafted: sim.agency.drafted.has(eid),
+    })
   }
   const doc: SaveDoc = {
     version: SAVE_VERSION,
@@ -95,6 +125,11 @@ export function serialize(sim: SimWorld): SaveDoc {
     raid: getRaidState(sim) ?? undefined,
     resources: { wood: sim.resources.wood, stone: sim.resources.stone },
     blueprintKeys: Array.from(sim.blueprints.keys()),
+    agency: agencyEntries,
+    stockpiles: Array.from(sim.stockpiles),
+    factionDoorTiles: Array.from(sim.factionDoorTiles),
+    farms: Array.from(sim.farms.entries()).map(([key, growth]) => ({ key, growth })),
+    items,
     crc: 0,
   }
   doc.crc = computeCrc(doc)
@@ -140,9 +175,12 @@ export function deserialize(input: SaveDoc): SimWorld {
         : spawnBlueprint(sim, kind, e.tile.tx, e.tile.ty)
       Structure.progress[newEid] = e.structure.progress
     } else if (e.critter) {
-      // Pass traitId='none' so deserialize never burns rng on a re-roll;
-      // existing save fixtures from v3 carry no trait field anyway.
-      newEid = spawnCritter(sim, e.critter.speciesId, e.tile.tx, e.tile.ty, { level: e.critter.level, traitId: 'none' })
+      // Pass traitId from the save (v4) or 'none' for legacy blobs, so deserialize
+      // never burns rng on a re-roll.
+      const trait = ((e as { trait?: TraitId }).trait ?? 'none') as TraitId
+      newEid = spawnCritter(sim, e.critter.speciesId, e.tile.tx, e.tile.ty, { level: e.critter.level, traitId: trait })
+      const home = (e as { homeAnchor?: { tx: number; ty: number } }).homeAnchor
+      if (home) sim.homeAnchors.set(newEid, home)
     } else {
       newEid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff)
     }
@@ -195,6 +233,20 @@ export function deserialize(input: SaveDoc): SimWorld {
       sim.blueprints.set(key, me)
     }
   }
+  // v4 restorations: agency, stockpiles, doors, farms, items.
+  const v4 = doc as { agency?: { eid: number; priorities: { chop: number; mine: number; build: number; tame: number; haul: number }; schedule: number[]; drafted: boolean }[]; stockpiles?: number[]; factionDoorTiles?: number[]; farms?: { key: number; growth: number }[]; items?: { tx: number; ty: number; kind: number; qty: number }[] }
+  if (v4.agency) {
+    for (const entry of v4.agency) {
+      const me = eidRemap.get(entry.eid) ?? entry.eid
+      sim.agency.priorities.set(me, { ...entry.priorities })
+      if (entry.schedule.length === 24) sim.agency.schedules.set(me, new Uint8Array(entry.schedule))
+      if (entry.drafted) sim.agency.drafted.add(me)
+    }
+  }
+  if (v4.stockpiles) for (const k of v4.stockpiles) sim.stockpiles.add(k)
+  if (v4.factionDoorTiles) for (const k of v4.factionDoorTiles) sim.factionDoorTiles.add(k)
+  if (v4.farms) for (const f of v4.farms) sim.farms.set(f.key, f.growth)
+  if (v4.items) for (const it of v4.items) dropItem(sim, it.kind as ItemKind, it.tx, it.ty, it.qty)
   return sim
 }
 

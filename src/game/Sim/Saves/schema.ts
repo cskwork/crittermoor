@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 3
+export const SAVE_VERSION = 4
 
 export interface EntitySnapshot {
   eid: number
@@ -50,9 +50,40 @@ export interface SaveDocV3 extends Omit<SaveDocV2, 'version'> {
   crc?: number
 }
 
-export type SaveDoc = SaveDocV1 | SaveDocV2 | SaveDocV3
+export interface AgencyEntry {
+  eid: number
+  priorities: { chop: number; mine: number; build: number; tame: number; haul: number }
+  schedule: number[] // length 24
+  drafted: boolean
+}
 
-export type CurrentSaveDoc = SaveDocV3
+export interface SaveDocV4 extends Omit<SaveDocV3, 'version' | 'entities'> {
+  version: 4
+  // v4 carries the same entity shape as v3 but with optional trait + home.
+  entities: EntityV4Snapshot[]
+  agency?: AgencyEntry[]
+  stockpiles?: number[]
+  factionDoorTiles?: number[]
+  farms?: { key: number; growth: number }[]
+  // Items dropped on tiles, persisted so the round-trip is lossless.
+  items?: ItemSnapshot[]
+}
+
+export interface ItemSnapshot {
+  tx: number
+  ty: number
+  kind: number
+  qty: number
+}
+
+export interface EntityV4Snapshot extends EntitySnapshot {
+  trait?: string
+  homeAnchor?: { tx: number; ty: number }
+}
+
+export type SaveDoc = SaveDocV1 | SaveDocV2 | SaveDocV3 | SaveDocV4
+
+export type CurrentSaveDoc = SaveDocV4
 
 export interface SaveMeta {
   slotId: string

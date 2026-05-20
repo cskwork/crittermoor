@@ -36,7 +36,7 @@ describe('save migrations', () => {
     const warden = spawnWarden(sim, 10, 10, 0xa8d08d)
     void warden
     const doc = serialize(sim)
-    expect(doc.version).toBe(3)
+    expect(doc.version).toBe(4)
     const sim2 = deserialize(doc)
     expect(sim2.tick).toBe(sim.tick)
     expect(sim2.seed).toBe(sim.seed)

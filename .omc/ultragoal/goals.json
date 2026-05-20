@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T11:03:02.479Z",
+  "updatedAt": "2026-05-20T11:06:37.928Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -71,10 +71,13 @@
       "id": "G006-polish",
       "title": "Polish",
       "objective": "Tutorial v2 (8-step interactive tour), DEV-only perf overlay (per-system ms + entity count + FPS), Joy / Recreation (JoyObjects in Joy slot), Plant / Farm (designation -> growth -> harvest -> RawFood) (CMR-017/018/038/041)",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:18.647Z"
+      "updatedAt": "2026-05-20T11:06:37.928Z",
+      "startedAt": "2026-05-20T11:06:37.775Z",
+      "completedAt": "2026-05-20T11:06:37.928Z",
+      "evidence": "Landed CMR-017 + CMR-018 + CMR-038 + CMR-041 in f0cd28a. 87/87 vitest (+4 farm tests). Lint zero warnings, typecheck strict clean, build 256 KB gzip JS. Tutorial.tsx now 8 steps (storage key bumped to v2), DEV-only PerfOverlay, joy regen during Joy slot, farm plant/grow/harvest system + new 'farm' tool (hotkey F)."
     },
     {
       "id": "G007-save-v4-determinism-replay-final-qua",
