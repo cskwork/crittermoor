@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T10:59:15.396Z",
+  "updatedAt": "2026-05-20T11:03:02.479Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -59,10 +59,13 @@
       "id": "G005-world-variety-combat-scaling",
       "title": "World variety + combat scaling",
       "objective": "Multi-biome worldgen (3 biomes + biome-specific spawns), faction-aware doors (block enemies / pass friendlies), raid scaler (wealth + day curve), mood + mental break, doctor work (CMR-022/026/028/033/037)",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:18.647Z"
+      "updatedAt": "2026-05-20T11:03:02.479Z",
+      "startedAt": "2026-05-20T11:03:02.316Z",
+      "completedAt": "2026-05-20T11:03:02.479Z",
+      "evidence": "Landed CMR-022 + CMR-026 + CMR-028 + CMR-033 in d8d4f42. CMR-037 doctor work deferred (needs downed-warden system from future pass). 83/83 vitest (+4 worldgen tests). Lint zero warnings, typecheck strict clean, build 255 KB gzip JS. Multi-biome worldgen (3 biomes, biome-specific species pools), buildRaidRoster scales with day+wealth, factionDoorTiles set blocks wild AI but not wardens, mood system + Wandering mental break state."
     },
     {
       "id": "G006-polish",

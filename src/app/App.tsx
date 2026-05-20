@@ -8,6 +8,7 @@ import { Tutorial } from '@ui/screens/Tutorial'
 import { Keybindings } from './Keybindings'
 import { AchievementToast } from '@ui/AchievementToast'
 import { PrioritiesPanel } from '@ui/panels/PrioritiesPanel'
+import { PerfOverlay } from '@ui/panels/PerfOverlay'
 
 export function App() {
   const canvasHostRef = useRef<HTMLDivElement>(null)
@@ -41,6 +42,7 @@ export function App() {
       )}
       {!booting && screen === 'battle' && <BattleScreen />}
       <AchievementToast />
+      <PerfOverlay />
     </div>
   )
 }

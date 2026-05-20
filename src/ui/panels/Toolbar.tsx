@@ -16,6 +16,7 @@ const TOOLS: ToolDef[] = [
   { id: 'mine', label: 'Mine', icon: '⛏', hotkey: 'M', hint: 'Click a stone tile' },
   { id: 'build', label: 'Build', icon: '⌂', hotkey: 'B', hint: 'Pick a structure, then click a tile' },
   { id: 'stockpile', label: 'Stockpile', icon: '▤', hotkey: 'Z', hint: 'Click a tile to mark / unmark a stockpile' },
+  { id: 'farm', label: 'Farm', icon: '✿', hotkey: 'F', hint: 'Click a soil tile to plant; harvests as raw food when ripe' },
   { id: 'tame', label: 'Tame', icon: '✦', hotkey: 'T', hint: 'Click a weakened wild critter' },
   { id: 'cancel', label: 'Cancel', icon: '✕', hotkey: 'X', hint: 'Click a designation or blueprint' },
 ]

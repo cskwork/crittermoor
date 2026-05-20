@@ -9,6 +9,7 @@ const TOOL_HOTKEYS: Record<string, ToolMode> = {
   KeyT: 'tame',
   KeyX: 'cancel',
   KeyZ: 'stockpile',
+  KeyF: 'farm',
 }
 
 export function Keybindings() {

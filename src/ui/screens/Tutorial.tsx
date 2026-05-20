@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'crittermoor.tutorial.seen'
+const STORAGE_KEY = 'crittermoor.tutorial.seen.v2'
 
 interface Step {
   title: string
@@ -10,7 +10,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: 'Welcome to Crittermoor',
-    body: 'You start with three wardens on a fresh moor. Left-click a forest or stone tile to designate work; your wardens will walk over and chop or mine.',
+    body: 'You start with three wardens on a fresh moor. Left-click a forest or stone tile to designate work; your wardens will walk over and chop or mine. Resources drop as items on the tile.',
   },
   {
     title: 'Move your wardens',
@@ -21,8 +21,24 @@ const STEPS: Step[] = [
     body: 'Use the speed buttons at the top (or Space / 1 / 2 / 3) to pause and accelerate the day.',
   },
   {
-    title: 'Save your colony',
-    body: 'Save is in the top bar; your save lives in your browser. Close the tab and come back whenever.',
+    title: 'Mark stockpile zones',
+    body: 'Press Z (Stockpile tool) and click tiles to mark them as storage. Idle wardens haul loose items into the nearest stockpile and that\'s how Wood and Stone become usable resources.',
+  },
+  {
+    title: 'Build & defend',
+    body: 'Press B for Build, pick a structure, then click a tile to place a blueprint. Walls block enemies, doors pass wardens but stop wild critters, and turrets auto-fire on raids.',
+  },
+  {
+    title: 'Tame and battle',
+    body: 'Weaken a wild critter in battle, then Shift+left-click to tame. Tamed critters follow their bonded warden. Battles open automatically when a raid arrives.',
+  },
+  {
+    title: 'Priorities & schedule',
+    body: 'Press P to open the Priorities panel. Set per-warden priorities (chop / mine / build / tame / haul) and a 24-hour schedule (Sleep / Work / Joy / Anything). Draft a warden to override autonomous behavior with right-click orders.',
+  },
+  {
+    title: 'Save when you like',
+    body: 'Autosave fires every 60 sim-seconds to the "autosave" slot, plus 3 named slots from the Save dialog. Saves carry a checksum and fall back to a previous snapshot if corrupted.',
   },
 ]
 
@@ -59,34 +75,34 @@ export function Tutorial() {
   const last = step === STEPS.length - 1
 
   return (
-    <div className="tutorial-overlay" role="dialog" aria-label="Tutorial">
+    <div className="tutorial-root" role="dialog" aria-label={`Tutorial step ${step + 1} of ${STEPS.length}`}>
       <div className="tutorial-card panel">
-        <div className="tutorial-progress" aria-hidden>
-          {STEPS.map((_, i) => (
-            <span key={i} className={i === step ? 'dot active' : 'dot'} />
-          ))}
-        </div>
-        <h3>{current.title}</h3>
+        <div className="t-step">Step {step + 1} of {STEPS.length}</div>
+        <h2>{current.title}</h2>
         <p>{current.body}</p>
-        <div className="actions">
-          <button onClick={dismiss}>Skip</button>
+        <div className="t-actions">
+          <button onClick={() => dismiss()}>Skip</button>
           <button
-            onClick={() => (last ? dismiss() : setStep(step + 1))}
+            className="primary"
             autoFocus
+            onClick={() => {
+              if (last) dismiss()
+              else setStep((s) => s + 1)
+            }}
           >
-            {last ? 'Start' : 'Next'}
+            {last ? 'Got it' : 'Next'}
           </button>
         </div>
       </div>
       <style>{`
-        .tutorial-overlay { position:absolute; inset:0; display:grid; place-items:end center; pointer-events:none; padding:24px; }
-        .tutorial-card { pointer-events:auto; max-width: 420px; padding:18px 20px; margin-bottom: 60px; }
-        .tutorial-card h3 { margin:8px 0 6px; color: var(--accent); }
-        .tutorial-card p { margin: 0 0 14px; color: var(--text); line-height: 1.45; }
-        .tutorial-progress { display:flex; gap:4px; justify-content:center; margin-bottom:6px; }
-        .tutorial-progress .dot { width:6px; height:6px; border-radius:50%; background: var(--text-dim); opacity: 0.4; }
-        .tutorial-progress .dot.active { opacity: 1; background: var(--accent); }
-        .tutorial-card .actions { display:flex; gap:8px; justify-content:flex-end; }
+        .tutorial-root { position:absolute; inset:0; display:grid; place-items:center; pointer-events:auto;
+          background: radial-gradient(ellipse at center, rgba(10,18,28,0.78) 0%, rgba(0,0,0,0.7) 100%); z-index: 70; }
+        .tutorial-card { min-width:420px; max-width:560px; padding:24px 28px; display:flex; flex-direction:column; gap:12px; }
+        .t-step { color:var(--text-dim); font-size:11px; letter-spacing:0.16em; text-transform:uppercase; }
+        .tutorial-card h2 { margin:0; color:var(--accent); }
+        .tutorial-card p { margin:0; line-height:1.55; color:var(--text); font-size:13px; }
+        .t-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+        .t-actions .primary { border-color:var(--accent); color:var(--accent); font-weight:600; }
       `}</style>
     </div>
   )

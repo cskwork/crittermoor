@@ -46,6 +46,9 @@ export interface SimWorld {
   // Tile-key set of door tiles. Wild AI refuses to step onto these so doors
   // block enemies but freely pass player wardens.
   factionDoorTiles: Set<number>
+  // Farm plots: tileKey → growthTicks (0 = planted, GROW_TICKS = mature).
+  // When ready, the warden with plant priority > 0 harvests for RawFood.
+  farms: Map<number, number>
 }
 
 export function createSimWorld(seed: number): SimWorld {
@@ -74,6 +77,7 @@ export function createSimWorld(seed: number): SimWorld {
     traits: new Map(),
     homeAnchors: new Map(),
     factionDoorTiles: new Set(),
+    farms: new Map(),
   }
 }
 

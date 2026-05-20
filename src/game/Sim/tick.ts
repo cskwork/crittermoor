@@ -11,6 +11,7 @@ import { makeRaidSystem, type RaidHooks } from './systems/raid'
 import { makeConstructSystem, type ConstructHooks } from './systems/construct'
 import { system_turret } from './systems/turret'
 import { makeHaulSystem, type HaulHooks } from './systems/haul'
+import { system_farm } from './systems/farm'
 
 export interface SimHooks {
   jobs: JobsHooks
@@ -31,6 +32,7 @@ export function makeRunTick(hooks: SimHooks): (sim: SimWorld) => void {
     system_pawn_behavior(sim)
     jobsSystem(sim)
     haulSystem(sim)
+    system_farm(sim)
     constructSystem(sim)
     system_turret(sim)
     system_wild_ai(sim)

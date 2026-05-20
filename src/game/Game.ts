@@ -16,6 +16,7 @@ import { tryTame } from './Sim/Critters/tame'
 import { STRUCTURES, type StructureKind } from './Sim/Structures/defs'
 import { spawnBlueprint } from './Sim/Structures/spawn'
 import { AUTOSAVE_SLOT, saveGame } from './Sim/Saves/store'
+import { plantFarm, removeFarm } from './Sim/systems/farm'
 
 const playerQuery = defineQuery([FactionComp, TilePos, Position])
 const entityAtTileQuery = defineQuery([TilePos])
@@ -264,6 +265,14 @@ export class Game {
         break
       case 'stockpile':
         this.toggleStockpile(sim, tx, ty)
+        break
+      case 'farm':
+        if (!plantFarm(sim, tx, ty)) {
+          if (removeFarm(sim, tx, ty)) sim.events.push(`Cleared farm at (${tx},${ty}).`)
+          else sim.events.push(`Cannot plant here (water/mountain/already planted).`)
+        } else {
+          sim.events.push(`Planted farm at (${tx},${ty}).`)
+        }
         break
     }
   }
