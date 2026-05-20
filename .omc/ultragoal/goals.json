@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T11:26:33.572Z",
-  "updatedAt": "2026-05-20T11:26:38.446Z",
+  "updatedAt": "2026-05-20T11:35:13.055Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -11,49 +11,62 @@
       "id": "G001-terrain-depth",
       "title": "Terrain depth",
       "objective": "Per-tile terrain variants (3-4 per kind) + animated water shimmer + biome-edge smoothing in tilemap chunk repaint",
-      "status": "in_progress",
+      "status": "complete",
       "attempt": 1,
       "createdAt": "2026-05-20T11:26:33.572Z",
-      "updatedAt": "2026-05-20T11:26:38.446Z",
-      "startedAt": "2026-05-20T11:26:38.446Z"
+      "updatedAt": "2026-05-20T11:35:11.915Z",
+      "startedAt": "2026-05-20T11:26:38.446Z",
+      "completedAt": "2026-05-20T11:35:11.915Z",
+      "evidence": "Landed in 1544aa1 — 91/91 vitest, lint 0, typecheck clean, build 257 KB gzip"
     },
     {
       "id": "G002-entity-polish",
       "title": "Entity polish",
       "objective": "Direction-aware warden tint variant + idle bob + selection highlight ring + in-world HP bar + smooth tile-to-tile movement interpolation",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T11:26:33.572Z",
-      "updatedAt": "2026-05-20T11:26:33.572Z"
+      "updatedAt": "2026-05-20T11:35:12.194Z",
+      "startedAt": "2026-05-20T11:35:12.056Z",
+      "completedAt": "2026-05-20T11:35:12.194Z",
+      "evidence": "Landed in 1544aa1 — 91/91 vitest, lint 0, typecheck clean, build 257 KB gzip"
     },
     {
       "id": "G003-vfx-particles",
       "title": "VFX particles",
       "objective": "Lightweight ParticleContainer overlay with chop/mine/build/raid/tame/autosave effects; reduced-motion gated; capped live count",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T11:26:33.572Z",
-      "updatedAt": "2026-05-20T11:26:33.572Z"
+      "updatedAt": "2026-05-20T11:35:12.476Z",
+      "startedAt": "2026-05-20T11:35:12.335Z",
+      "completedAt": "2026-05-20T11:35:12.476Z",
+      "evidence": "Landed in 1544aa1 — 91/91 vitest, lint 0, typecheck clean, build 257 KB gzip"
     },
     {
       "id": "G004-lighting-and-atmosphere",
       "title": "Lighting and atmosphere",
       "objective": "Improved day/night with directional gradient + warm light pools around stove/turret at night + optional film-grain post toggle",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T11:26:33.572Z",
-      "updatedAt": "2026-05-20T11:26:33.572Z"
+      "updatedAt": "2026-05-20T11:35:12.764Z",
+      "startedAt": "2026-05-20T11:35:12.617Z",
+      "completedAt": "2026-05-20T11:35:12.764Z",
+      "evidence": "Landed in 1544aa1 — 91/91 vitest, lint 0, typecheck clean, build 257 KB gzip"
     },
     {
       "id": "G005-ui-ux-best-practices",
       "title": "UI/UX best practices",
       "objective": "CSS variable design tokens, unified button states, tooltip-on-delay primitive, focus rings everywhere, custom cursors per tool, save-slot overwrite confirm, mobile HUD reflow, ARIA live regions, color-contrast audit + final quality gate",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T11:26:33.572Z",
-      "updatedAt": "2026-05-20T11:26:33.572Z"
+      "updatedAt": "2026-05-20T11:35:13.055Z",
+      "startedAt": "2026-05-20T11:35:12.909Z",
+      "evidence": "Landed in 1544aa1. Design tokens + button states + tooltip primitive + confirm dialog + custom cursors + ARIA-live events + 800px reflow. 91/91 vitest, lint 0, typecheck clean, build 257 KB gzip JS.",
+      "completedAt": "2026-05-20T11:35:13.055Z"
     }
   ],
-  "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-terrain-depth Terrain depth; G002-entity-polish Entity polish; G003-vfx-particles VFX particles; G004-lighting-and-atmosphere Lighting and atmosphere; G005-ui-ux-best-practices UI/UX best practices",
-  "activeGoalId": "G001-terrain-depth"
+  "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-terrain-depth Terrain depth; G002-entity-polish Entity polish; G003-vfx-particles VFX particles; G004-lighting-and-atmosphere Lighting and atmosphere; G005-ui-ux-best-practices UI/UX best practices"
 }
