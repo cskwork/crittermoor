@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUiStore, type SpeedSetting } from '@/app/stores/uiStore'
-import { listSaves, saveGame, loadGame } from '@/game/Sim/Saves/store'
-import type { SaveMeta } from '@/game/Sim/Saves/schema'
+import {
+  AUTOSAVE_SLOT,
+  NAMED_SLOTS,
+  listSlotsOrdered,
+  loadGameWithFallback,
+  saveGame,
+} from '@/game/Sim/Saves/store'
+import { SaveCorruptError, type SaveMeta } from '@/game/Sim/Saves/schema'
 import { dayOf, phaseOf } from '@/game/Sim/systems/time'
 import { Toolbar } from '@/ui/panels/Toolbar'
 import { SelectionPanel } from '@/ui/panels/SelectionPanel'
 import { EventsLog } from '@/ui/panels/EventsLog'
 import { Resources } from '@/ui/panels/Resources'
+import { onAutosaveRecovered } from '@/achievements/trigger'
+import { sound } from '@/audio/SoundManager'
 
 const SPEEDS: SpeedSetting[] = [0, 1, 2, 4]
-const DEFAULT_SLOT = 'autosave'
+const DEFAULT_SLOT = AUTOSAVE_SLOT
 
 const PHASE_ICON: Record<'dawn' | 'day' | 'dusk' | 'night', string> = {
   dawn: '☼',
@@ -18,18 +26,33 @@ const PHASE_ICON: Record<'dawn' | 'day' | 'dusk' | 'night', string> = {
   night: '✦',
 }
 
+interface SlotRow {
+  slotId: string
+  meta: SaveMeta | null
+}
+
+const NAMED_LABELS: Record<string, string> = {
+  [AUTOSAVE_SLOT]: 'Autosave',
+  slot1: 'Slot 1',
+  slot2: 'Slot 2',
+  slot3: 'Slot 3',
+}
+
 export function HUD() {
   const speed = useUiStore((s) => s.speed)
   const setSpeed = useUiStore((s) => s.setSpeed)
-  const [saves, setSaves] = useState<SaveMeta[]>([])
-  const [showLoad, setShowLoad] = useState(false)
+  const [slots, setSlots] = useState<SlotRow[]>([])
+  const [mode, setMode] = useState<'load' | 'save' | null>(null)
   const [status, setStatus] = useState<string>('')
-  const [clock, setClock] = useState<{ day: number; phase: 'dawn' | 'day' | 'dusk' | 'night' }>({ day: 1, phase: 'day' })
+  const [clock, setClock] = useState<{ day: number; phase: 'dawn' | 'day' | 'dusk' | 'night' }>({
+    day: 1,
+    phase: 'day',
+  })
   const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (showLoad) listSaves().then(setSaves).catch(() => undefined)
-  }, [showLoad])
+    if (mode !== null) listSlotsOrdered().then(setSlots).catch(() => undefined)
+  }, [mode])
 
   useEffect(() => {
     function readClock() {
@@ -43,31 +66,48 @@ export function HUD() {
     }
   }, [])
 
-  function onSave() {
+  function onSave(slotId: string) {
     const game = (window as unknown as { __crittermoorGame?: { sim?: unknown } }).__crittermoorGame
     const sim = game?.sim
     if (!sim) {
       setStatus('No active game.')
       return
     }
-    saveGame(DEFAULT_SLOT, sim as never)
-      .then((meta) => setStatus(`Saved · day ${meta.day} · tick ${meta.tick}`))
+    sound.play('ui_click')
+    saveGame(slotId, sim as never, NAMED_LABELS[slotId] ?? slotId)
+      .then((meta) => {
+        setStatus(`Saved to ${NAMED_LABELS[slotId] ?? slotId} · day ${meta.day} · tick ${meta.tick}`)
+        setMode(null)
+      })
       .catch((err: unknown) => setStatus(`Save failed: ${String(err)}`))
   }
 
   function onLoad(slotId: string) {
-    loadGame(slotId)
-      .then((sim) => {
-        if (!sim) {
+    sound.play('ui_click')
+    loadGameWithFallback(slotId)
+      .then((result) => {
+        if (!result) {
           setStatus('Save not found.')
           return
         }
         const handler = (window as unknown as { __crittermoorApplyLoad?: (s: unknown) => void }).__crittermoorApplyLoad
-        if (handler) handler(sim)
-        setShowLoad(false)
-        setStatus(`Loaded · tick ${sim.tick}`)
+        if (handler) handler(result.sim)
+        setMode(null)
+        if (result.fromPrevSnapshot) {
+          setStatus(`Loaded ${NAMED_LABELS[slotId] ?? slotId} from previous snapshot (current blob was corrupt).`)
+        } else {
+          setStatus(`Loaded ${NAMED_LABELS[slotId] ?? slotId} · tick ${result.sim.tick}`)
+        }
+        if (slotId === AUTOSAVE_SLOT) onAutosaveRecovered()
       })
-      .catch((err: unknown) => setStatus(`Load failed: ${String(err)}`))
+      .catch((err: unknown) => {
+        if (err instanceof SaveCorruptError) {
+          setStatus(`Save corrupt and no previous snapshot to recover from in slot '${slotId}'.`)
+          sound.play('error_blip')
+        } else {
+          setStatus(`Load failed: ${String(err)}`)
+        }
+      })
   }
 
   return (
@@ -84,7 +124,10 @@ export function HUD() {
             <button
               key={s}
               className={s === speed ? 'active' : ''}
-              onClick={() => setSpeed(s)}
+              onClick={() => {
+                sound.play('ui_click')
+                setSpeed(s)
+              }}
               aria-pressed={s === speed}
               title={s === 0 ? 'Pause' : `${s}x speed`}
             >
@@ -93,8 +136,8 @@ export function HUD() {
           ))}
         </div>
         <div className="hud-actions">
-          <button onClick={onSave}>Save</button>
-          <button onClick={() => setShowLoad((v) => !v)}>Load</button>
+          <button onClick={() => setMode((m) => (m === 'save' ? null : 'save'))}>Save…</button>
+          <button onClick={() => setMode((m) => (m === 'load' ? null : 'load'))}>Load…</button>
           <button onClick={() => (window as unknown as { __crittermoorTestBattle?: () => void }).__crittermoorTestBattle?.()}>
             Test Battle
           </button>
@@ -112,23 +155,41 @@ export function HUD() {
 
       {status && <div className="hud-status panel">{status}</div>}
 
-      {showLoad && (
-        <div className="load-panel panel" role="dialog" aria-label="Load game">
-          <h3>Load Game</h3>
-          {saves.length === 0 && <p className="empty">No saves yet.</p>}
+      {mode !== null && (
+        <div className="load-panel panel" role="dialog" aria-label={mode === 'load' ? 'Load game' : 'Save game'}>
+          <h3>{mode === 'load' ? 'Load Game' : 'Save Game'}</h3>
+          {slots.length === 0 && <p className="empty">No slots yet.</p>}
           <ul>
-            {saves.map((s) => (
-              <li key={s.slotId}>
-                <button onClick={() => onLoad(s.slotId)}>
-                  <strong>{s.name}</strong>
-                  <span>· day {s.day}</span>
-                  <span>· seed {s.seed}</span>
-                  <span>· {new Date(s.savedAt).toLocaleString()}</span>
-                </button>
-              </li>
-            ))}
+            {[AUTOSAVE_SLOT, ...NAMED_SLOTS].map((slotId) => {
+              const row = slots.find((s) => s.slotId === slotId) ?? { slotId, meta: null }
+              const label = NAMED_LABELS[slotId] ?? slotId
+              const meta = row.meta
+              const empty = meta === null
+              const disableSave = mode === 'save' && slotId === AUTOSAVE_SLOT
+              const disableLoad = mode === 'load' && empty
+              return (
+                <li key={slotId} className={empty ? 'empty-row' : ''}>
+                  <button
+                    onClick={() => (mode === 'save' ? onSave(slotId) : onLoad(slotId))}
+                    disabled={disableSave || disableLoad}
+                    title={disableSave ? 'Autosave is managed by the game' : undefined}
+                  >
+                    <strong>{label}</strong>
+                    {meta ? (
+                      <>
+                        <span>· day {meta.day}</span>
+                        <span>· seed {meta.seed}</span>
+                        <span>· {new Date(meta.savedAt).toLocaleString()}</span>
+                      </>
+                    ) : (
+                      <span className="placeholder">· empty</span>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
-          <button onClick={() => setShowLoad(false)}>Close</button>
+          <button onClick={() => setMode(null)}>Close</button>
         </div>
       )}
 
@@ -154,8 +215,12 @@ export function HUD() {
         .load-panel ul { list-style:none; padding:0; margin:0 0 10px; }
         .load-panel li { margin:6px 0; }
         .load-panel li button { width:100%; text-align:left; padding:8px 10px; display:flex; gap:8px; flex-wrap:wrap; }
+        .load-panel li button:disabled { opacity:0.5; cursor:not-allowed; }
+        .load-panel li.empty-row .placeholder { color: var(--text-dim); font-style: italic; }
         .empty { color:var(--text-dim); }
       `}</style>
     </div>
   )
 }
+
+void DEFAULT_SLOT

@@ -4,22 +4,105 @@ import { speciesById } from '@/game/Sim/Critters/species'
 import { TYPE_COLOR, TYPE_NAMES } from '@/game/Sim/Critters/types'
 import { getMove } from '@/game/Sim/Battle/moves'
 import { isBattleOver, type BattleAction, type BattleCritter } from '@/game/Sim/Battle/BattleState'
+import { formatDamagePopup, parseDamageLines } from '@/ui/battle/damagePopup'
+import { sound } from '@/audio/SoundManager'
+
+interface FloatingPopup {
+  key: number
+  side: 0 | 1
+  text: string
+  color: 'red' | 'yellow' | 'gray'
+}
+
+let popupKeyCounter = 0
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 export function BattleScreen() {
   const state = useBattleStore((s) => s.state)
   const onAction = useBattleStore((s) => s.onAction)
   const onEnd = useBattleStore((s) => s.onEnd)
   const [selectedMoveId, setSelectedMoveId] = useState<string | null>(null)
+  const [popups, setPopups] = useState<FloatingPopup[]>([])
+  const [shakeUntil, setShakeUntil] = useState(0)
+  const [shakeOffset, setShakeOffset] = useState({ x: 0, y: 0 })
+  const lastSeenTurnRef = useRef(-1)
+  const lastSeenLogLenRef = useRef(0)
+  const wonRef = useRef<0 | 1 | null | undefined>(undefined)
   const logRef = useRef<HTMLOListElement>(null)
   const winner = useMemo(() => (state ? isBattleOver(state) : { over: false, winner: null }), [state])
 
   useEffect(() => {
     setSelectedMoveId(null)
-    // Scroll log to bottom on every turn.
     requestAnimationFrame(() => {
       if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
     })
-  }, [state?.turn])
+    if (!state) {
+      lastSeenTurnRef.current = -1
+      lastSeenLogLenRef.current = 0
+      wonRef.current = undefined
+      return
+    }
+    if (state.turn === lastSeenTurnRef.current) return
+    const newLines = state.log.slice(lastSeenLogLenRef.current)
+    lastSeenLogLenRef.current = state.log.length
+    lastSeenTurnRef.current = state.turn
+    const events = parseDamageLines(newLines)
+    if (events.length > 0) {
+      const reduced = prefersReducedMotion()
+      const next: FloatingPopup[] = events.map((e) => {
+        const fmt = formatDamagePopup({ dmg: e.dmg, crit: e.crit })
+        return { key: ++popupKeyCounter, side: (1 - e.side) as 0 | 1, text: fmt.text, color: fmt.color }
+      })
+      setPopups((prev) => [...prev, ...next])
+      const anyHit = events.some((e) => e.dmg > 0)
+      if (anyHit) sound.play('battle_hit')
+      const anyCrit = events.some((e) => e.crit)
+      if (anyCrit) sound.play('battle_crit')
+      // Schedule popup cleanup (600ms each).
+      next.forEach((p) => {
+        window.setTimeout(() => setPopups((curr) => curr.filter((x) => x.key !== p.key)), 600)
+      })
+      // Shake on crit, JS only — gated by reduced-motion.
+      if (anyCrit && !reduced) {
+        const until = performance.now() + 4 * 16 // 4 frames
+        setShakeUntil(until)
+      }
+    }
+  }, [state])
+
+  // Drive the shake via rAF when active.
+  useEffect(() => {
+    if (shakeUntil <= 0) return
+    let raf = 0
+    const step = () => {
+      const now = performance.now()
+      if (now >= shakeUntil) {
+        setShakeOffset({ x: 0, y: 0 })
+        return
+      }
+      const mag = 6
+      setShakeOffset({ x: (Math.random() * 2 - 1) * mag, y: (Math.random() * 2 - 1) * mag })
+      raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [shakeUntil])
+
+  // Victory / defeat sound, fired once per resolution.
+  useEffect(() => {
+    if (!winner.over) {
+      wonRef.current = undefined
+      return
+    }
+    if (wonRef.current === winner.winner) return
+    wonRef.current = winner.winner
+    if (winner.winner === 0) sound.play('battle_victory')
+    else if (winner.winner === 1) sound.play('battle_defeat')
+  }, [winner.over, winner.winner])
 
   if (!state) return null
   const player = state.sides[0]
@@ -49,7 +132,16 @@ export function BattleScreen() {
 
   return (
     <div className="battle-root">
+      <div
+        className="battle-shake-wrap"
+        style={{ transform: shakeOffset.x || shakeOffset.y ? `translate(${shakeOffset.x}px, ${shakeOffset.y}px)` : undefined }}
+      >
       <div className="battle-panel panel">
+        <div className="popup-layer" aria-hidden>
+          {popups.map((p) => (
+            <span key={p.key} className={`dmg-popup side-${p.side} color-${p.color}`}>{p.text}</span>
+          ))}
+        </div>
         <div className="banner">
           <span>Battle · turn {state.turn + 1}</span>
           {winner.over && (
@@ -110,6 +202,7 @@ export function BattleScreen() {
             <button autoFocus onClick={() => onEnd && onEnd(winner.winner)}>Return to colony</button>
           </div>
         )}
+      </div>
       </div>
       <BattleStyles />
     </div>
@@ -177,7 +270,20 @@ function BattleStyles() {
       .chip { padding: 0 6px; border-radius: 4px; font-size: 10px; color:#0d1115; font-weight:600; }
       .hp-bar { display:inline-block; width:100%; height:6px; background: #1e2630; border-radius: 3px; overflow:hidden; }
       .hp-bar.large { height:8px; }
-      .hp-bar > span { display:block; height:100%; background: var(--accent); transition: width 200ms ease-out; }
+      .hp-bar > span { display:block; height:100%; background: var(--accent); transition: width 300ms cubic-bezier(0.33, 1, 0.68, 1); }
+      .battle-shake-wrap { display:contents; }
+      .popup-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+      .dmg-popup { position:absolute; font-weight:700; font-size:18px; text-shadow: 0 0 6px rgba(0,0,0,0.6);
+        animation: dmgFloat 600ms ease-out forwards; }
+      .dmg-popup.color-red { color: var(--danger, #e07a5f); }
+      .dmg-popup.color-yellow { color: #f0c674; font-size: 22px; }
+      .dmg-popup.color-gray { color: var(--text-dim); }
+      .dmg-popup.side-0 { top: 30%; left: 30%; }
+      .dmg-popup.side-1 { top: 30%; right: 30%; }
+      @keyframes dmgFloat { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-32px); opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) {
+        .dmg-popup { animation: none; }
+      }
       .hp-num { font-size:11px; color: var(--text-dim); }
       .actions { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
       .moves { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }

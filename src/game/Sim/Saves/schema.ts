@@ -45,6 +45,9 @@ export interface SaveDocV3 extends Omit<SaveDocV2, 'version'> {
   version: 3
   resources?: { wood: number; stone: number }
   blueprintKeys?: number[]
+  // CRC32 over the JSON form of this doc with `crc` set to 0.
+  // Absent on older blobs; present on every blob written by the current codec.
+  crc?: number
 }
 
 export type SaveDoc = SaveDocV1 | SaveDocV2 | SaveDocV3
@@ -58,4 +61,12 @@ export interface SaveMeta {
   tick: number
   day: number
   seed: number
+  colonyName?: string
+}
+
+export class SaveCorruptError extends Error {
+  constructor(public readonly slotId: string, message: string) {
+    super(message)
+    this.name = 'SaveCorruptError'
+  }
 }

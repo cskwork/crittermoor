@@ -2,6 +2,7 @@ import { defineQuery, hasComponent } from 'bitecs'
 import { Faction as FactionComp, Job, Needs, Pawn } from '../components'
 import type { SimWorld } from '../world'
 import { Faction } from '@/shared/constants'
+import { sound } from '@/audio/SoundManager'
 
 export enum Behavior {
   Idle = 0,
@@ -25,7 +26,8 @@ export function system_pawn_behavior(sim: SimWorld): void {
     if (FactionComp.id[eid] !== Faction.Player) continue
     const food = Needs.food[eid]!
     const rest = Needs.rest[eid]!
-    let behavior = Pawn.behavior[eid] as Behavior
+    const prev = Pawn.behavior[eid] as Behavior
+    let behavior = prev
 
     // Transitions
     if (behavior === Behavior.Sleeping && rest >= REST_FULL) behavior = Behavior.Idle
@@ -33,6 +35,10 @@ export function system_pawn_behavior(sim: SimWorld): void {
     else if (rest <= REST_LOW) behavior = Behavior.Sleeping
     else if (food <= FOOD_LOW) behavior = Behavior.Eating
     Pawn.behavior[eid] = behavior
+    if (behavior !== prev) {
+      if (behavior === Behavior.Sleeping) sound.play('sleep')
+      else if (behavior === Behavior.Eating) sound.play('eat')
+    }
 
     // Regen overrides while sleeping/eating; pause job progress.
     if (behavior === Behavior.Sleeping || behavior === Behavior.Eating) {

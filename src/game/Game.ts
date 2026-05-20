@@ -7,7 +7,7 @@ import { generateWorld } from './Sim/Gen/worldGen'
 import { createPathClient, type PathClient } from './Sim/Pathing/PathClient'
 import { defineQuery, removeEntity } from 'bitecs'
 import { Faction as FactionComp, Position, Structure, TilePos } from './Sim/components'
-import { Faction, Terrain } from '@/shared/constants'
+import { Faction, TICKS_PER_SECOND_1X, Terrain } from '@/shared/constants'
 import { makeRunTick } from './Sim/tick'
 import { createBattleState, type BattleAction, type BattleCritter, type Side } from './Sim/Battle/BattleState'
 import { executeTurn, isBattleOver } from './Sim/Battle/BattleSim'
@@ -15,9 +15,14 @@ import { teamFromSpecies } from './Sim/Battle/buildTeam'
 import { tryTame } from './Sim/Critters/tame'
 import { STRUCTURES, type StructureKind } from './Sim/Structures/defs'
 import { spawnBlueprint } from './Sim/Structures/spawn'
+import { AUTOSAVE_SLOT, saveGame } from './Sim/Saves/store'
 
 const playerQuery = defineQuery([FactionComp, TilePos, Position])
 const entityAtTileQuery = defineQuery([TilePos])
+
+// Autosave fires when `tick` has advanced by this many ticks since the last
+// successful autosave write. 60 sim-seconds at 1x = 8 ticks/sec * 60.
+const AUTOSAVE_INTERVAL_TICKS = TICKS_PER_SECOND_1X * 60
 
 export class Game {
   private renderer: Renderer
@@ -26,6 +31,9 @@ export class Game {
   private pathClient: PathClient | null = null
   private booted = false
   private pendingActions: [BattleAction | null, BattleAction | null] = [null, null]
+  private autosaveTimer: number | null = null
+  private lastAutosaveTick = 0
+  private autosaving = false
 
   constructor(host: HTMLDivElement) {
     this.renderer = new Renderer(host)
@@ -76,6 +84,42 @@ export class Game {
       (side, action) => this.recordBattleAction(side, action),
       (winner) => this.endBattle(winner),
     )
+
+    this.startAutosave()
+  }
+
+  private startAutosave(): void {
+    this.stopAutosave()
+    this.lastAutosaveTick = this.sim?.tick ?? 0
+    // Poll every 2 real-seconds; fires when sim has advanced AUTOSAVE_INTERVAL_TICKS.
+    this.autosaveTimer = window.setInterval(() => this.maybeAutosave(), 2000)
+  }
+
+  private stopAutosave(): void {
+    if (this.autosaveTimer !== null) {
+      clearInterval(this.autosaveTimer)
+      this.autosaveTimer = null
+    }
+  }
+
+  private maybeAutosave(): void {
+    const sim = this.sim
+    if (!sim || this.autosaving) return
+    if (useUiStore.getState().screen !== 'colony') return
+    if (sim.tick - this.lastAutosaveTick < AUTOSAVE_INTERVAL_TICKS) return
+    this.autosaving = true
+    const targetTick = sim.tick
+    saveGame(AUTOSAVE_SLOT, sim, 'Autosave')
+      .then(() => {
+        this.lastAutosaveTick = targetTick
+        sim.events.push(`Autosaved at tick ${targetTick}.`)
+      })
+      .catch((err: unknown) => {
+        sim.events.push(`Autosave failed: ${String(err)}`)
+      })
+      .finally(() => {
+        this.autosaving = false
+      })
   }
 
   startTestBattle(): void {
@@ -130,6 +174,7 @@ export class Game {
   }
 
   private applyLoaded(loaded: SimWorld): void {
+    this.stopAutosave()
     this.scheduler?.stop()
     this.pathClient?.dispose()
     if (this.sim) destroyWorld(this.sim)
@@ -143,11 +188,13 @@ export class Game {
     })
     this.scheduler = new TickScheduler(loaded, () => this.renderer.draw(loaded), tick)
     this.scheduler.start()
+    this.startAutosave()
     const w = window as unknown as { __crittermoorGame: { sim: SimWorld } }
     w.__crittermoorGame = { sim: loaded }
   }
 
   dispose(disposeRenderer = true): void {
+    this.stopAutosave()
     this.scheduler?.stop()
     this.scheduler = null
     this.pathClient?.dispose()

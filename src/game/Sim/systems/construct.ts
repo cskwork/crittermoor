@@ -5,6 +5,8 @@ import type { SimWorld } from '../world'
 import { STRUCTURES, type StructureKind } from '../Structures/defs'
 import { applyPathCost } from '../Structures/spawn'
 import { Behavior } from './behavior'
+import { sound } from '@/audio/SoundManager'
+import { onStructureBuilt } from '@/achievements/trigger'
 
 const wardenQuery = defineQuery([Pawn, FactionComp, TilePos])
 const blueprintQuery = defineQuery([Structure, TilePos])
@@ -86,6 +88,8 @@ function progressBuild(sim: SimWorld, bpEid: number, wardenEid: number): void {
       Skills.construct[wardenEid]!++
     }
     sim.events.push(`Built ${def.name} at (${tx},${ty}).`)
+    sound.play('build_complete')
+    onStructureBuilt(kind)
   }
 }
 

@@ -1,5 +1,6 @@
 import { DAY_LENGTH_TICKS } from '@/shared/constants'
 import type { SimWorld } from '../world'
+import { sound } from '@/audio/SoundManager'
 
 const MIN_DAYS_TO_FIRST_RAID = 3
 const MIN_INTERVAL_DAYS = 4
@@ -45,6 +46,7 @@ export function makeRaidSystem(hooks: RaidHooks) {
     if (sim.rng.chance(0.5)) team.push(1 + sim.rng.int(6))
 
     sim.events.push('A hostile pack approaches the colony!')
+    sound.play('raid_alarm')
     r.scheduled = false
     hooks.onRaid(team)
 

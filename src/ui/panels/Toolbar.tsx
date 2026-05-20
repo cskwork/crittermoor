@@ -1,5 +1,6 @@
 import { useUiStore, type ToolMode } from '@/app/stores/uiStore'
 import { STRUCTURE_LIST } from '@/game/Sim/Structures/defs'
+import { sound } from '@/audio/SoundManager'
 
 interface ToolDef {
   id: ToolMode
@@ -33,9 +34,11 @@ export function Toolbar() {
             key={t.id}
             className={t.id === toolMode ? 'tool active' : 'tool'}
             onClick={() => {
+              sound.play('ui_click')
               setToolMode(t.id)
               if (t.id === 'build' && buildKind === 0) setBuildKind(STRUCTURE_LIST[0]!.kind)
             }}
+            onMouseEnter={() => sound.play('ui_hover')}
             aria-pressed={t.id === toolMode}
             title={`${t.label} (${t.hotkey})`}
           >

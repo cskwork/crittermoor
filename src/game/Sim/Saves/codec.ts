@@ -14,8 +14,9 @@ import {
 } from '../components'
 import { Faction } from '@/shared/constants'
 import { createSimWorld, spawnWarden, type SimWorld } from '../world'
-import { SAVE_VERSION, type EntitySnapshot, type SaveDoc } from './schema'
+import { SAVE_VERSION, SaveCorruptError, type EntitySnapshot, type SaveDoc } from './schema'
 import { migrateToCurrent } from './migrations'
+import { crc32String } from './crc32'
 import { spawnCritter } from '../Critters/spawn'
 import { spawnBlueprint, spawnCompleteStructure } from '../Structures/spawn'
 import type { StructureKind } from '../Structures/defs'
@@ -76,7 +77,7 @@ export function serialize(sim: SimWorld): SaveDoc {
     void Pawn
     entities.push(snap)
   }
-  return {
+  const doc: SaveDoc = {
     version: SAVE_VERSION,
     savedAt: Date.now(),
     seed: sim.seed,
@@ -94,6 +95,28 @@ export function serialize(sim: SimWorld): SaveDoc {
     raid: getRaidState(sim) ?? undefined,
     resources: { wood: sim.resources.wood, stone: sim.resources.stone },
     blueprintKeys: Array.from(sim.blueprints.keys()),
+    crc: 0,
+  }
+  doc.crc = computeCrc(doc)
+  return doc
+}
+
+export function computeCrc(doc: SaveDoc): number {
+  const withZero = { ...doc, crc: 0 } as SaveDoc
+  return crc32String(JSON.stringify(withZero))
+}
+
+export function verifyCrc(doc: SaveDoc, slotId = '<unknown>'): void {
+  // Older blobs (v1/v2 or pre-CRC v3) carry no crc. Accept them — corruption
+  // detection only protects newly written blobs.
+  const stored = (doc as { crc?: number }).crc
+  if (stored === undefined) return
+  const recomputed = computeCrc(doc)
+  if (recomputed !== stored) {
+    throw new SaveCorruptError(
+      slotId,
+      `Save blob CRC mismatch in slot '${slotId}' (stored=${stored}, recomputed=${recomputed}).`,
+    )
   }
 }
 

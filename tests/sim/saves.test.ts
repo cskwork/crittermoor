@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { createSimWorld, spawnWarden } from '@/game/Sim/world'
 import { generateWorld } from '@/game/Sim/Gen/worldGen'
-import { serialize, deserialize } from '@/game/Sim/Saves/codec'
+import { computeCrc, deserialize, serialize, verifyCrc } from '@/game/Sim/Saves/codec'
+import { crc32String } from '@/game/Sim/Saves/crc32'
+import { SaveCorruptError, type SaveDocV3 } from '@/game/Sim/Saves/schema'
 import { Needs } from '@/game/Sim/components'
 void Needs
 
@@ -30,6 +32,23 @@ describe('save codec', () => {
     const restored = deserialize(doc)
     expect(restored.designations.size).toBe(2)
     expect(restored.events).toEqual(sim.events)
+  })
+
+  it('stamps a verifying CRC and rejects tampered blobs', () => {
+    const sim = createSimWorld(7)
+    generateWorld(sim)
+    const doc = serialize(sim) as SaveDocV3
+    expect(typeof doc.crc).toBe('number')
+    expect(doc.crc).toBe(computeCrc({ ...doc, crc: 0 }))
+    verifyCrc(doc)
+    const tampered: SaveDocV3 = { ...doc, tick: doc.tick + 1 }
+    expect(() => verifyCrc(tampered, 'autosave')).toThrowError(SaveCorruptError)
+  })
+
+  it('crc32 is stable for known inputs', () => {
+    expect(crc32String('')).toBe(0)
+    expect(crc32String('crittermoor')).toBe(crc32String('crittermoor'))
+    expect(crc32String('a')).not.toBe(crc32String('b'))
   })
 
   it('preserves rng state for deterministic continuation', () => {

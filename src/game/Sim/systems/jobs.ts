@@ -4,6 +4,7 @@ import { Faction as FactionComp, Job, Pawn, Skills, TilePos } from '../component
 import { Faction, Terrain } from '@/shared/constants'
 import { addComponent } from 'bitecs'
 import { Behavior } from './behavior'
+import { sound } from '@/audio/SoundManager'
 
 export enum JobKind {
   None = 0,
@@ -114,6 +115,7 @@ function progressJob(sim: SimWorld, eid: number): void {
   }
   if (designation.kind === 'chop') sim.resources.wood += 2
   else sim.resources.stone += 2
+  sound.play(designation.kind === 'chop' ? 'chop_wood' : 'mine_stone')
   sim.events.push(
     `${designation.kind === 'chop' ? 'Chopped (+2 wood)' : 'Mined (+2 stone)'} at (${designation.tx},${designation.ty}).`,
   )
