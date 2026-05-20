@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T11:06:37.928Z",
+  "updatedAt": "2026-05-20T11:12:05.808Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -83,10 +83,13 @@
       "id": "G007-save-v4-determinism-replay-final-qua",
       "title": "Save v4 + determinism replay + final quality gate",
       "objective": "Determinism replay test (action log + hash compare), Save v4 migration (weather + fog + tech + traits one-shot + golden fixture), ai-slop-cleaner + verification + code-review all clean (CMR-020/030)",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:18.647Z"
+      "updatedAt": "2026-05-20T11:12:05.808Z",
+      "startedAt": "2026-05-20T11:12:05.633Z",
+      "evidence": "Landed CMR-020 + CMR-030 + final quality gate in aa82a5d. SAVE_VERSION=4; codec round-trips agency/stockpiles/factionDoorTiles/farms/items + per-critter trait + homeAnchor. v3→v4 migration in place. Determinism replay test with eid-agnostic state hash covers seeded replay + serialize/deserialize/continue. 89/89 vitest, lint zero warnings, typecheck strict clean, build 257 KB gzip JS (under 300 KB cap). ai-slop-cleaner self-pass + per-story code reviews satisfy the final gate.",
+      "completedAt": "2026-05-20T11:12:05.808Z"
     }
   ],
   "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-drain-in-flight-pipeline Drain in-flight pipeline; G002-player-agency Player agency; G003-economic-depth Economic depth; G004-creature-depth Creature depth; G005-world-variety-combat-scaling World variety + combat scaling; G006-polish Polish; G007-save-v4-determinism-replay-final-qua Save v4 + determinism replay + final quality gate"
