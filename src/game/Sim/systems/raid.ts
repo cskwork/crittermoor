@@ -1,6 +1,8 @@
 import { DAY_LENGTH_TICKS } from '@/shared/constants'
 import type { SimWorld } from '../world'
 import { sound } from '@/audio/SoundManager'
+import { defineQuery, hasComponent } from 'bitecs'
+import { Structure } from '../components'
 
 const MIN_DAYS_TO_FIRST_RAID = 3
 const MIN_INTERVAL_DAYS = 4
@@ -35,17 +37,47 @@ export function setRaidState(sim: SimWorld, state: RaidState): void {
   w._raid = state
 }
 
+// Roster builder: scales with day count + colony wealth (stone, wood, finished structures).
+export function buildRaidRoster(sim: SimWorld, rngInt: (n: number) => number, rngChance: (p: number) => boolean): number[] {
+  const day = Math.floor(sim.tick / DAY_LENGTH_TICKS) + 1
+  const wealth = colonyWealth(sim)
+  // Difficulty index: 1 + day/12 + wealth/200, capped at 5 hostiles.
+  const diffRaw = 1 + day / 12 + wealth / 200
+  const targetSize = Math.min(5, Math.max(1, Math.floor(diffRaw)))
+  const roster: number[] = []
+  for (let i = 0; i < targetSize; i++) {
+    roster.push(1 + rngInt(6))
+  }
+  // Boss tier: 1-in-8 chance once difficulty crosses 3 — extra elite at the top.
+  if (diffRaw >= 3 && rngChance(0.125)) {
+    roster.push(1 + rngInt(6))
+  }
+  return roster
+}
+
+function colonyWealth(sim: SimWorld): number {
+  // Wealth = wood + stone + 8 * completed-structure-count. Cheap to compute each raid tick.
+  let structures = 0
+  const eids = structureQuery(sim.ecs)
+  for (let i = 0; i < eids.length; i++) {
+    const eid = eids[i]!
+    if (!hasComponent(sim.ecs, Structure, eid)) continue
+    if (Structure.state[eid] === 1) structures++
+  }
+  return sim.resources.wood + sim.resources.stone + structures * 8
+}
+
+const structureQuery = defineQuery([Structure])
+
 export function makeRaidSystem(hooks: RaidHooks) {
   return function system_raid(sim: SimWorld): void {
     const r = ensureRaidState(sim)
     if (!r.scheduled || sim.tick < r.nextRaidTick) return
 
-    // Pick 1-2 hostile species ids (1..6).
-    const team: number[] = []
-    team.push(1 + sim.rng.int(6))
-    if (sim.rng.chance(0.5)) team.push(1 + sim.rng.int(6))
+    const team = buildRaidRoster(sim, (n) => sim.rng.int(n), (p) => sim.rng.chance(p))
 
-    sim.events.push('A hostile pack approaches the colony!')
+    const day = Math.floor(sim.tick / DAY_LENGTH_TICKS) + 1
+    sim.events.push(`A hostile pack of ${team.length} approaches on day ${day}!`)
     sound.play('raid_alarm')
     r.scheduled = false
     hooks.onRaid(team)

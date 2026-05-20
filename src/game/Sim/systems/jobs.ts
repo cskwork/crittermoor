@@ -43,7 +43,8 @@ export function makeJobSystem(hooks: JobsHooks) {
     for (let i = 0; i < eids.length; i++) {
       const eid = eids[i]!
       if (FactionComp.id[eid] !== Faction.Player) continue
-      if (Pawn.behavior[eid] === Behavior.Sleeping || Pawn.behavior[eid] === Behavior.Eating) continue
+      const b = Pawn.behavior[eid] as Behavior
+      if (b === Behavior.Sleeping || b === Behavior.Eating || b === Behavior.Wandering) continue
       // Drafted wardens follow player orders only; skip autonomous designations.
       if (isDrafted(sim.agency, eid)) continue
       if (!hasComponent(sim.ecs, Job, eid)) {

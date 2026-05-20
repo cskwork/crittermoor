@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T10:55:13.425Z",
+  "updatedAt": "2026-05-20T10:59:15.396Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -47,10 +47,13 @@
       "id": "G004-creature-depth",
       "title": "Creature depth",
       "objective": "Wild AI v2 (home range + pack cohesion + flee on low HP), Critter inspect panel (stats/moves/bond/trait/level), 6 critter traits with stat modifiers + spawn-time roll (CMR-019/021/027)",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:18.647Z"
+      "updatedAt": "2026-05-20T10:59:15.396Z",
+      "startedAt": "2026-05-20T10:59:15.234Z",
+      "completedAt": "2026-05-20T10:59:15.396Z",
+      "evidence": "Landed CMR-019 + CMR-021 + CMR-027 in dd14674. 79/79 vitest (+5 trait tests). Lint zero warnings, typecheck strict clean, build 254 KB gzip JS. New module src/game/Sim/Critters/traits.ts (7 traits, rollTrait, applyTrait). Wild AI v2: home anchor + pack centroid + low-HP flee in src/game/Sim/systems/wildAi.ts. SelectionPanel.tsx critter inspector surfaces trait, combat stats, moves. Codec opts out of trait re-roll to keep save round-trip RNG-stable."
     },
     {
       "id": "G005-world-variety-combat-scaling",

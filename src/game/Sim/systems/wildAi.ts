@@ -62,6 +62,9 @@ export function system_wild_ai(sim: SimWorld): void {
     const ny = clamp(wy + stepY, 0, sim.map.height - 1)
     const tileIdx = ny * sim.map.width + nx
     if (sim.map.cost[tileIdx] === 0) continue
+    // Doors are faction-aware: wild creatures bounce off them while wardens
+    // walk through (door pathing cost stays passable for the A* solver).
+    if (sim.factionDoorTiles.has(tileIdx)) continue
 
     TilePos.tx[eid] = nx
     TilePos.ty[eid] = ny

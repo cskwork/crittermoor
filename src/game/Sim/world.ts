@@ -43,6 +43,9 @@ export interface SimWorld {
   traits: Map<number, import('./Critters/traits').TraitId>
   // Per-creature home anchor tile (for wild-AI v2 home-range behavior).
   homeAnchors: Map<number, { tx: number; ty: number }>
+  // Tile-key set of door tiles. Wild AI refuses to step onto these so doors
+  // block enemies but freely pass player wardens.
+  factionDoorTiles: Set<number>
 }
 
 export function createSimWorld(seed: number): SimWorld {
@@ -70,6 +73,7 @@ export function createSimWorld(seed: number): SimWorld {
     stockpiles: new Set(),
     traits: new Map(),
     homeAnchors: new Map(),
+    factionDoorTiles: new Set(),
   }
 }
 

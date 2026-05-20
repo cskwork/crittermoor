@@ -10,7 +10,13 @@ export enum Behavior {
   Working = 1,
   Sleeping = 2,
   Eating = 3,
+  Wandering = 4,
 }
+
+// Mood threshold below which a pawn snaps into Wandering (mental break)
+// and refuses to take jobs until mood recovers.
+export const MOOD_BREAK_THRESHOLD = -60
+export const MOOD_RECOVER_THRESHOLD = -20
 
 const REST_LOW = 25
 const REST_FULL = 80
@@ -32,9 +38,16 @@ export function system_pawn_behavior(sim: SimWorld): void {
     const drafted = isDrafted(sim.agency, eid)
     const slot = currentSlot(sim.agency, eid, sim.tick, DAY_LENGTH_TICKS)
 
+    const mood = Pawn.mood[eid] ?? 0
     // Drafted wardens skip autonomous transitions; player input drives them.
     if (drafted) {
       behavior = Behavior.Idle
+    } else if (behavior === Behavior.Wandering && mood >= MOOD_RECOVER_THRESHOLD) {
+      behavior = Behavior.Idle
+    } else if (behavior !== Behavior.Wandering && mood <= MOOD_BREAK_THRESHOLD) {
+      // Snap into mental break: wander aimlessly until mood recovers.
+      behavior = Behavior.Wandering
+      sim.events.push(`Warden #${eid} snapped into a wandering mental break.`)
     } else if (behavior === Behavior.Sleeping && rest >= REST_FULL) {
       behavior = Behavior.Idle
     } else if (behavior === Behavior.Eating && food >= FOOD_FULL) {
