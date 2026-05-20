@@ -1,8 +1,9 @@
 import { defineQuery, hasComponent } from 'bitecs'
 import { Faction as FactionComp, Job, Needs, Pawn } from '../components'
 import type { SimWorld } from '../world'
-import { Faction } from '@/shared/constants'
+import { DAY_LENGTH_TICKS, Faction } from '@/shared/constants'
 import { sound } from '@/audio/SoundManager'
+import { ScheduleSlot, currentSlot, isDrafted } from '../agency'
 
 export enum Behavior {
   Idle = 0,
@@ -28,12 +29,25 @@ export function system_pawn_behavior(sim: SimWorld): void {
     const rest = Needs.rest[eid]!
     const prev = Pawn.behavior[eid] as Behavior
     let behavior = prev
+    const drafted = isDrafted(sim.agency, eid)
+    const slot = currentSlot(sim.agency, eid, sim.tick, DAY_LENGTH_TICKS)
 
-    // Transitions
-    if (behavior === Behavior.Sleeping && rest >= REST_FULL) behavior = Behavior.Idle
-    else if (behavior === Behavior.Eating && food >= FOOD_FULL) behavior = Behavior.Idle
-    else if (rest <= REST_LOW) behavior = Behavior.Sleeping
-    else if (food <= FOOD_LOW) behavior = Behavior.Eating
+    // Drafted wardens skip autonomous transitions; player input drives them.
+    if (drafted) {
+      behavior = Behavior.Idle
+    } else if (behavior === Behavior.Sleeping && rest >= REST_FULL) {
+      behavior = Behavior.Idle
+    } else if (behavior === Behavior.Eating && food >= FOOD_FULL) {
+      behavior = Behavior.Idle
+    } else if (food <= FOOD_LOW) {
+      // Critical hunger always wins; can't work or sleep while starving.
+      behavior = Behavior.Eating
+    } else if (slot === ScheduleSlot.Sleep && rest < REST_FULL) {
+      // Scheduled bedtime: nap whenever the player has assigned this hour to Sleep.
+      behavior = Behavior.Sleeping
+    } else if (rest <= REST_LOW) {
+      behavior = Behavior.Sleeping
+    }
     Pawn.behavior[eid] = behavior
     if (behavior !== prev) {
       if (behavior === Behavior.Sleeping) sound.play('sleep')

@@ -7,6 +7,7 @@ import { applyPathCost } from '../Structures/spawn'
 import { Behavior } from './behavior'
 import { sound } from '@/audio/SoundManager'
 import { onStructureBuilt } from '@/achievements/trigger'
+import { getPriorities, isDrafted } from '../agency'
 
 const wardenQuery = defineQuery([Pawn, FactionComp, TilePos])
 const blueprintQuery = defineQuery([Structure, TilePos])
@@ -29,6 +30,8 @@ export function makeConstructSystem(hooks: ConstructHooks) {
       const eid = wardens[i]!
       if (FactionComp.id[eid] !== Faction.Player) continue
       if (Pawn.behavior[eid] === Behavior.Sleeping || Pawn.behavior[eid] === Behavior.Eating) continue
+      if (isDrafted(sim.agency, eid)) continue
+      if (getPriorities(sim.agency, eid).build <= 0) continue
       const wx = TilePos.tx[eid]!
       const wy = TilePos.ty[eid]!
 

@@ -10,11 +10,14 @@ interface UiState {
   selectedEid: number | null
   toolMode: ToolMode
   buildKind: number // StructureKind id, 0 = none
+  showPriorities: boolean
   setScreen: (s: Screen) => void
   setSpeed: (s: SpeedSetting) => void
   setSelected: (eid: number | null) => void
   setToolMode: (m: ToolMode) => void
   setBuildKind: (k: number) => void
+  togglePriorities: () => void
+  setShowPriorities: (v: boolean) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -23,9 +26,12 @@ export const useUiStore = create<UiState>((set) => ({
   selectedEid: null,
   toolMode: 'select',
   buildKind: 0,
+  showPriorities: false,
   setScreen: (screen) => set({ screen }),
   setSpeed: (speed) => set({ speed }),
   setSelected: (selectedEid) => set({ selectedEid }),
   setToolMode: (toolMode) => set({ toolMode }),
   setBuildKind: (buildKind) => set({ buildKind }),
+  togglePriorities: () => set((s) => ({ showPriorities: !s.showPriorities })),
+  setShowPriorities: (showPriorities) => set({ showPriorities }),
 }))

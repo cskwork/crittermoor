@@ -73,9 +73,11 @@ export class Game {
     const w = window as unknown as {
       __crittermoorGame: { sim: SimWorld }
       __crittermoorApplyLoad: (loaded: SimWorld) => void
+      __crittermoorPlayerEids: () => number[]
     }
     w.__crittermoorGame = { sim }
     w.__crittermoorApplyLoad = (loaded) => this.applyLoaded(loaded)
+    w.__crittermoorPlayerEids = () => this.playerEids()
     ;(window as unknown as { __crittermoorTestBattle: () => void }).__crittermoorTestBattle = () =>
       this.startTestBattle()
 
@@ -216,12 +218,16 @@ export class Game {
     if (tx < 0 || ty < 0 || tx >= sim.map.width || ty >= sim.map.height) return
 
     if (button === 2) {
-      // Right-click always moves the player wardens.
+      // Right-click sends drafted wardens to the target if any exist;
+      // otherwise falls back to moving all player wardens (legacy behavior).
       const eids = playerQuery(sim.ecs)
+      const hasDrafted = sim.agency.drafted.size > 0
       for (let i = 0; i < eids.length; i++) {
         const eid = eids[i]!
         if (FactionComp.id[eid] !== Faction.Player) continue
+        if (hasDrafted && !sim.agency.drafted.has(eid)) continue
         this.requestPath(eid, TilePos.tx[eid]!, TilePos.ty[eid]!, tx, ty)
+        if (hasDrafted) sim.agency.draftTargets.set(eid, { tx, ty })
       }
       return
     }
@@ -327,6 +333,18 @@ export class Game {
       removeEntity(sim.ecs, bpEid)
       sim.events.push(`Cancelled blueprint at (${tx},${ty}). 50% refund.`)
     }
+  }
+
+  private playerEids(): number[] {
+    const sim = this.sim
+    if (!sim) return []
+    const eids = playerQuery(sim.ecs)
+    const out: number[] = []
+    for (let i = 0; i < eids.length; i++) {
+      const eid = eids[i]!
+      if (FactionComp.id[eid] === Faction.Player) out.push(eid)
+    }
+    return out
   }
 
   private requestPath(eid: number, fromX: number, fromY: number, toX: number, toY: number): void {

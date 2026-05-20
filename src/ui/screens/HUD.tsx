@@ -138,6 +138,9 @@ export function HUD() {
         <div className="hud-actions">
           <button onClick={() => setMode((m) => (m === 'save' ? null : 'save'))}>Save…</button>
           <button onClick={() => setMode((m) => (m === 'load' ? null : 'load'))}>Load…</button>
+          <button onClick={() => useUiStore.getState().togglePriorities()} title="Priorities & Schedule (P)">
+            Priorities
+          </button>
           <button onClick={() => (window as unknown as { __crittermoorTestBattle?: () => void }).__crittermoorTestBattle?.()}>
             Test Battle
           </button>

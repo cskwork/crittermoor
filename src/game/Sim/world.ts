@@ -4,6 +4,7 @@ import { MAP_DEFAULT_H, MAP_DEFAULT_W, Terrain } from '@/shared/constants'
 import { Faction as FactionComp, HasPath, Health, Needs, Pawn, Position, PositionPrev, Renderable, Skills, TilePos } from './components'
 import { Faction } from '@/shared/constants'
 import { PathStorage } from './Pathing/PathStorage'
+import { createAgency, type AgencyState } from './agency'
 
 export interface TileMap {
   width: number
@@ -34,6 +35,7 @@ export interface SimWorld {
   blueprints: Map<number, number> // tile-key → structure eid (state=blueprint)
   resources: ColonyResources
   events: string[]
+  agency: AgencyState
 }
 
 export function createSimWorld(seed: number): SimWorld {
@@ -57,6 +59,7 @@ export function createSimWorld(seed: number): SimWorld {
     blueprints: new Map(),
     resources: { wood: 30, stone: 30 },
     events: [],
+    agency: createAgency(),
   }
 }
 

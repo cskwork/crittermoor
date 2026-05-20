@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T10:29:25.053Z",
+  "updatedAt": "2026-05-20T10:43:31.553Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -11,20 +11,23 @@
       "id": "G001-drain-in-flight-pipeline",
       "title": "Drain in-flight pipeline",
       "objective": "Land CMR-008 autosave+CRC, CMR-009 14-SFX audio, CMR-010 3-slot save UI, CMR-015 battle juice, CMR-016 achievements; pipeline empty of in-progress/review work",
-      "status": "in_progress",
+      "status": "complete",
       "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:25.053Z",
-      "startedAt": "2026-05-20T10:29:25.053Z"
+      "updatedAt": "2026-05-20T10:43:12.074Z",
+      "startedAt": "2026-05-20T10:29:25.053Z",
+      "completedAt": "2026-05-20T10:43:12.074Z",
+      "evidence": "Landed CMR-008/009/010/015/016 in commit be2d8ed. 61/61 vitest (+19 new tests across audio + achievements + damagePopup + saveStore CRC/rollback/slot list). Lint zero warnings, typecheck strict clean, build 248 KB gzip JS (within 300 KB cap). New modules: src/game/Sim/Saves/crc32.ts, src/audio/SoundManager.ts, src/achievements/{registry,store,trigger}.ts, src/ui/AchievementToast.tsx, src/ui/battle/damagePopup.ts. Behavioral wins: corruption-safe save with __prev rollback, 60 sim-second autosave to 'autosave' slot, 14 SFX wired at trigger sites, HP-bar 300ms easeOutCubic tween + per-side damage popups + rAF crit shake (reduced-motion gated), 10 device-scoped achievements with 4s toast."
     },
     {
       "id": "G002-player-agency",
       "title": "Player agency",
       "objective": "WorkPriority grid (per-warden x worktype, 0-4), 24h Schedule grid (Sleep/Work/Joy/Anything), Draft mode (click orders override autonomy), unified Priority+Schedule panel (CMR-031/032/039/040)",
-      "status": "pending",
-      "attempt": 0,
+      "status": "in_progress",
+      "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:18.647Z"
+      "updatedAt": "2026-05-20T10:43:31.553Z",
+      "startedAt": "2026-05-20T10:43:31.553Z"
     },
     {
       "id": "G003-economic-depth",
@@ -73,5 +76,5 @@
     }
   ],
   "claudeObjective": "Complete all ultragoal stories in .omc/ultragoal/goals.json: G001-drain-in-flight-pipeline Drain in-flight pipeline; G002-player-agency Player agency; G003-economic-depth Economic depth; G004-creature-depth Creature depth; G005-world-variety-combat-scaling World variety + combat scaling; G006-polish Polish; G007-save-v4-determinism-replay-final-qua Save v4 + determinism replay + final quality gate",
-  "activeGoalId": "G001-drain-in-flight-pipeline"
+  "activeGoalId": "G002-player-agency"
 }

@@ -7,6 +7,7 @@ import { BattleScreen } from '@ui/screens/BattleScreen'
 import { Tutorial } from '@ui/screens/Tutorial'
 import { Keybindings } from './Keybindings'
 import { AchievementToast } from '@ui/AchievementToast'
+import { PrioritiesPanel } from '@ui/panels/PrioritiesPanel'
 
 export function App() {
   const canvasHostRef = useRef<HTMLDivElement>(null)
@@ -35,6 +36,7 @@ export function App() {
         <>
           <HUD />
           <Tutorial />
+          <PrioritiesPanel />
         </>
       )}
       {!booting && screen === 'battle' && <BattleScreen />}

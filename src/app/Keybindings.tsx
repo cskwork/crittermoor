@@ -29,7 +29,11 @@ export function Keybindings() {
         return
       }
       if (e.code === 'Escape') {
-        useUiStore.setState({ selectedEid: null, toolMode: 'select' })
+        useUiStore.setState({ selectedEid: null, toolMode: 'select', showPriorities: false })
+        return
+      }
+      if (e.code === 'KeyP') {
+        useUiStore.getState().togglePriorities()
         return
       }
       const speeds: Record<string, SpeedSetting> = { Digit1: 1, Digit2: 2, Digit3: 4 }

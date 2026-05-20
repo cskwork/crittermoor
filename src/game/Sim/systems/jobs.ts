@@ -5,6 +5,7 @@ import { Faction, Terrain } from '@/shared/constants'
 import { addComponent } from 'bitecs'
 import { Behavior } from './behavior'
 import { sound } from '@/audio/SoundManager'
+import { getPriorities, isDrafted } from '../agency'
 
 export enum JobKind {
   None = 0,
@@ -37,6 +38,8 @@ export function makeJobSystem(hooks: JobsHooks) {
       const eid = eids[i]!
       if (FactionComp.id[eid] !== Faction.Player) continue
       if (Pawn.behavior[eid] === Behavior.Sleeping || Pawn.behavior[eid] === Behavior.Eating) continue
+      // Drafted wardens follow player orders only; skip autonomous designations.
+      if (isDrafted(sim.agency, eid)) continue
       if (!hasComponent(sim.ecs, Job, eid)) {
         addComponent(sim.ecs, Job, eid)
         Job.kind[eid] = JobKind.None
@@ -62,15 +65,20 @@ function assignBestDesignation(sim: SimWorld, eid: number, hooks: JobsHooks): vo
   const fromY = TilePos.ty[eid]!
   const construct = hasSkill(sim, eid) ? Skills.construct[eid]! : 0
   const mine = hasSkill(sim, eid) ? Skills.mine[eid]! : 0
+  const priorities = getPriorities(sim.agency, eid)
   let best: { key: number; tx: number; ty: number; kind: 'chop' | 'mine'; score: number } | null = null
   for (const [key, d] of sim.designations) {
     if (isAlreadyTargeted(sim, key, eid)) continue
+    // Honor per-warden priority: 0 = disabled, otherwise lower number is preferred.
+    const pri = d.kind === 'chop' ? priorities.chop : priorities.mine
+    if (pri <= 0) continue
     const dx = d.tx - fromX
     const dy = d.ty - fromY
     const distSq = dx * dx + dy * dy
-    // Higher = better. Skill adds ~1 unit per level; distance penalty grows with sqrt.
+    // Higher = better. Priority dominates (5 - pri yields biggest bonus for pri=1).
+    // Skill adds ~1 unit per level; distance penalty grows with sqrt.
     const skillBonus = d.kind === 'chop' ? construct : mine
-    const score = skillBonus - Math.sqrt(distSq) * 0.1
+    const score = (5 - pri) * 5 + skillBonus - Math.sqrt(distSq) * 0.1
     if (best === null || score > best.score) {
       best = { key, tx: d.tx, ty: d.ty, kind: d.kind, score }
     }
