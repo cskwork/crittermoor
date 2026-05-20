@@ -14,6 +14,7 @@ export function App() {
   const canvasHostRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Game | null>(null)
   const screen = useUiStore((s) => s.screen)
+  const toolMode = useUiStore((s) => s.toolMode)
   const [booting, setBooting] = useState(true)
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function App() {
 
   return (
     <div className="app-root">
-      <div ref={canvasHostRef} className="canvas-host" aria-label="game canvas" />
+      <div ref={canvasHostRef} className={`canvas-host tool-${toolMode}`} aria-label="game canvas" role="application" />
       <Keybindings />
       {booting && <div className="boot-overlay">Loading Crittermoor…</div>}
       {!booting && screen === 'title' && <TitleScreen onStart={(seed) => gameRef.current?.newGame(seed)} />}

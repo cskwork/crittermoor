@@ -5,6 +5,8 @@ import { EntityLayer } from './EntityLayer'
 import { Camera } from './Camera'
 import { TILE_SIZE } from '@/shared/constants'
 import { phaseOf } from '../Sim/systems/time'
+import { VfxLayer, type VfxKind } from './VfxLayer'
+import { LightingLayer } from './LightingLayer'
 
 export type TileClickHandler = (tx: number, ty: number, button: number, shiftKey: boolean) => void
 
@@ -15,6 +17,8 @@ export class Renderer {
   private overlay: Graphics
   private tilemap: TilemapView | null = null
   private entities: EntityLayer | null = null
+  private vfx: VfxLayer | null = null
+  private lighting: LightingLayer | null = null
   private nightTint: Graphics
   private resizeObserver: ResizeObserver
   private camera: Camera | null = null
@@ -67,19 +71,31 @@ export class Renderer {
       }
       this.viewport.removeChild(c)
     }
+    this.vfx?.dispose()
+    this.lighting?.dispose()
     this.tilemap = new TilemapView(sim)
     this.entities = new EntityLayer(sim)
+    this.vfx = new VfxLayer()
+    this.lighting = new LightingLayer()
     this.viewport.addChild(this.tilemap.container)
+    this.viewport.addChild(this.lighting.container) // sits between tiles and entities so warm pools wash terrain
     this.viewport.addChild(this.entities.container)
+    this.viewport.addChild(this.vfx.container)
     this.viewport.addChild(this.overlay)
     this.camera?.dispose()
     this.camera = new Camera(this.viewport, this.host)
     this.camera.centerOn((sim.map.width * TILE_SIZE) / 2, (sim.map.height * TILE_SIZE) / 2)
   }
 
+  spawnVfx(kind: VfxKind, tx: number, ty: number): void {
+    this.vfx?.spawn(kind, tx, ty)
+  }
+
   draw(sim: SimWorld): void {
     this.tilemap?.update(sim)
+    this.lighting?.update(sim)
     this.entities?.update(sim)
+    this.vfx?.draw()
     this.drawDesignations(sim)
     this.drawNightTint(sim)
   }

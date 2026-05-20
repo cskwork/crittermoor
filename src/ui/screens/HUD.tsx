@@ -15,6 +15,7 @@ import { EventsLog } from '@/ui/panels/EventsLog'
 import { Resources } from '@/ui/panels/Resources'
 import { onAutosaveRecovered } from '@/achievements/trigger'
 import { sound } from '@/audio/SoundManager'
+import { ConfirmDialog } from '@/ui/components/ConfirmDialog'
 
 const SPEEDS: SpeedSetting[] = [0, 1, 2, 4]
 const DEFAULT_SLOT = AUTOSAVE_SLOT
@@ -49,6 +50,7 @@ export function HUD() {
     phase: 'day',
   })
   const timerRef = useRef<number | null>(null)
+  const [pendingOverwrite, setPendingOverwrite] = useState<{ slotId: string; label: string } | null>(null)
 
   useEffect(() => {
     if (mode !== null) listSlotsOrdered().then(setSlots).catch(() => undefined)
@@ -67,6 +69,15 @@ export function HUD() {
   }, [])
 
   function onSave(slotId: string) {
+    const existing = slots.find((s) => s.slotId === slotId)?.meta
+    if (existing && slotId !== AUTOSAVE_SLOT) {
+      setPendingOverwrite({ slotId, label: NAMED_LABELS[slotId] ?? slotId })
+      return
+    }
+    doSave(slotId)
+  }
+
+  function doSave(slotId: string) {
     const game = (window as unknown as { __crittermoorGame?: { sim?: unknown } }).__crittermoorGame
     const sim = game?.sim
     if (!sim) {
@@ -156,7 +167,23 @@ export function HUD() {
       <EventsLog />
       <SelectionPanel />
 
-      {status && <div className="hud-status panel">{status}</div>}
+      {status && <div className="hud-status panel" role="status" aria-live="polite">{status}</div>}
+
+      {pendingOverwrite && (
+        <ConfirmDialog
+          title={`Overwrite ${pendingOverwrite.label}?`}
+          message="The existing save in this slot will be moved to a previous-snapshot backup. You can still recover it if the new save corrupts, but the live slot will be replaced."
+          confirmLabel="Overwrite"
+          cancelLabel="Cancel"
+          danger
+          onConfirm={() => {
+            const slotId = pendingOverwrite.slotId
+            setPendingOverwrite(null)
+            doSave(slotId)
+          }}
+          onCancel={() => setPendingOverwrite(null)}
+        />
+      )}
 
       {mode !== null && (
         <div className="load-panel panel" role="dialog" aria-label={mode === 'load' ? 'Load game' : 'Save game'}>

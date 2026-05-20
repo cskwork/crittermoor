@@ -78,10 +78,12 @@ export class Game {
       __crittermoorGame: { sim: SimWorld }
       __crittermoorApplyLoad: (loaded: SimWorld) => void
       __crittermoorPlayerEids: () => number[]
+      __crittermoorVfx: (kind: 'chop' | 'mine' | 'build' | 'raid' | 'tame' | 'autosave', tx: number, ty: number) => void
     }
     w.__crittermoorGame = { sim }
     w.__crittermoorApplyLoad = (loaded) => this.applyLoaded(loaded)
     w.__crittermoorPlayerEids = () => this.playerEids()
+    w.__crittermoorVfx = (kind, tx, ty) => this.renderer.spawnVfx(kind, tx, ty)
     ;(window as unknown as { __crittermoorTestBattle: () => void }).__crittermoorTestBattle = () =>
       this.startTestBattle()
 
@@ -119,6 +121,10 @@ export class Game {
       .then(() => {
         this.lastAutosaveTick = targetTick
         sim.events.push(`Autosaved at tick ${targetTick}.`)
+        // Bloom on the colony center so players see the autosave land.
+        const cx = Math.floor(sim.map.width / 2)
+        const cy = Math.floor(sim.map.height / 2)
+        this.renderer.spawnVfx('autosave', cx, cy)
       })
       .catch((err: unknown) => {
         sim.events.push(`Autosave failed: ${String(err)}`)

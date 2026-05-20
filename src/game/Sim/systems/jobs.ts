@@ -10,6 +10,7 @@ import { dropItem } from '../Items/spawn'
 import { ItemKind } from '../Items/defs'
 import { tryPickup } from './haul'
 import { Item } from '../components'
+import { spawnVfx } from '@/game/vfxBridge'
 
 export enum JobKind {
   None = 0,
@@ -159,6 +160,7 @@ function progressJob(sim: SimWorld, eid: number): void {
     dropItem(sim, dropKind, designation.tx, designation.ty, dropQty)
   }
   sound.play(designation.kind === 'chop' ? 'chop_wood' : 'mine_stone')
+  spawnVfx(designation.kind === 'chop' ? 'chop' : 'mine', designation.tx, designation.ty)
   sim.events.push(
     `${designation.kind === 'chop' ? 'Chopped (+2 wood)' : 'Mined (+2 stone)'} at (${designation.tx},${designation.ty}).`,
   )

@@ -11,6 +11,7 @@ import { Faction } from '@/shared/constants'
 import type { SimWorld } from '../world'
 import { sound } from '@/audio/SoundManager'
 import { onTame } from '@/achievements/trigger'
+import { spawnVfx } from '@/game/vfxBridge'
 
 const critterQuery = defineQuery([Critter, FactionComp, TilePos, Health])
 
@@ -50,6 +51,7 @@ export function tryTame(sim: SimWorld, wardenEid: number, tx: number, ty: number
   Bond.level[target] = 20
   sim.events.push(`Tamed a wild ${critterName(target)}!`)
   sound.play('critter_cry')
+  spawnVfx('tame', TilePos.tx[target] ?? 0, TilePos.ty[target] ?? 0)
   onTame(Critter.speciesId[target] ?? 0)
   return { ok: true, reason: 'success', critterEid: target }
 }

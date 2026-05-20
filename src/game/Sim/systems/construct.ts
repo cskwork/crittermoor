@@ -8,6 +8,7 @@ import { Behavior } from './behavior'
 import { sound } from '@/audio/SoundManager'
 import { onStructureBuilt } from '@/achievements/trigger'
 import { getPriorities, isDrafted } from '../agency'
+import { spawnVfx } from '@/game/vfxBridge'
 
 const wardenQuery = defineQuery([Pawn, FactionComp, TilePos])
 const blueprintQuery = defineQuery([Structure, TilePos])
@@ -92,6 +93,7 @@ function progressBuild(sim: SimWorld, bpEid: number, wardenEid: number): void {
     }
     sim.events.push(`Built ${def.name} at (${tx},${ty}).`)
     sound.play('build_complete')
+    spawnVfx('build', tx, ty)
     onStructureBuilt(kind)
   }
 }
