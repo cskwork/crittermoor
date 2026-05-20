@@ -14,11 +14,15 @@ import { Faction } from '@/shared/constants'
 import type { SimWorld } from '../world'
 import { speciesById, speciesByKey, type SpeciesDef } from './species'
 import { CritterType, TYPE_COLOR } from './types'
+import { applyTrait, rollTrait } from './traits'
 
 export interface SpawnOptions {
   level?: number
   hostile?: boolean
   packId?: number
+  // When provided, skips the rng-consuming trait roll. Used by the save codec
+  // so deserialize re-spawns critters without burning RNG state.
+  traitId?: import('./traits').TraitId
 }
 
 export function spawnCritter(
@@ -54,25 +58,37 @@ export function spawnCritter(
   Critter.level[eid] = opts.level ?? 5
   Critter.xp[eid] = 0
   Critter.bond[eid] = 0
-  applyStats(species, eid)
+  const traitId = opts.traitId ?? rollTrait(sim.rng)
+  sim.traits.set(eid, traitId)
+  sim.homeAnchors.set(eid, { tx, ty })
+  applyStats(sim, species, eid)
   FactionComp.id[eid] = opts.hostile === false ? Faction.Neutral : Faction.Wild
   Wild.aggression[eid] = opts.hostile === false ? 0 : 60
   Wild.packId[eid] = opts.packId ?? 0
   return eid
 }
 
-function applyStats(species: SpeciesDef, eid: number): void {
+function applyStats(sim: SimWorld, species: SpeciesDef, eid: number): void {
   const lvl = Critter.level[eid] ?? 1
   const scale = 1 + (lvl - 1) * 0.04
   const s = species.baseStats
-  const hp = Math.round(s.hp * scale)
-  Health.hp[eid] = hp
-  Health.maxHp[eid] = hp
-  CombatStats.atk[eid] = Math.min(255, Math.round(s.atk * scale))
-  CombatStats.def[eid] = Math.min(255, Math.round(s.def * scale))
-  CombatStats.satk[eid] = Math.min(255, Math.round(s.satk * scale))
-  CombatStats.sdef[eid] = Math.min(255, Math.round(s.sdef * scale))
-  CombatStats.spd[eid] = Math.min(255, Math.round(s.spd * scale))
+  const scaled = {
+    hp: s.hp * scale,
+    atk: s.atk * scale,
+    def: s.def * scale,
+    satk: s.satk * scale,
+    sdef: s.sdef * scale,
+    spd: s.spd * scale,
+  }
+  const trait = sim.traits.get(eid) ?? 'none'
+  const tweaked = applyTrait(scaled, trait)
+  Health.hp[eid] = tweaked.hp
+  Health.maxHp[eid] = tweaked.hp
+  CombatStats.atk[eid] = Math.min(255, tweaked.atk)
+  CombatStats.def[eid] = Math.min(255, tweaked.def)
+  CombatStats.satk[eid] = Math.min(255, tweaked.satk)
+  CombatStats.sdef[eid] = Math.min(255, tweaked.sdef)
+  CombatStats.spd[eid] = Math.min(255, tweaked.spd)
 }
 
 export function spawnPack(sim: SimWorld, speciesKey: string, tx: number, ty: number, count: number, packId: number): number[] {

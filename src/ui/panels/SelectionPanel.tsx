@@ -3,6 +3,7 @@ import { hasComponent } from 'bitecs'
 import { useUiStore } from '@/app/stores/uiStore'
 import {
   Bond,
+  CombatStats,
   Critter,
   Faction as FactionComp,
   Health,
@@ -16,6 +17,9 @@ import { Faction } from '@/shared/constants'
 import { speciesById } from '@/game/Sim/Critters/species'
 import { TYPE_COLOR, TYPE_NAMES } from '@/game/Sim/Critters/types'
 import { Behavior } from '@/game/Sim/systems/behavior'
+import { traitById, type TraitId } from '@/game/Sim/Critters/traits'
+import { getMove } from '@/game/Sim/Battle/moves'
+import type { SimWorld } from '@/game/Sim/world'
 
 interface EntityView {
   eid: number
@@ -29,6 +33,9 @@ interface EntityView {
   skills?: { construct: number; mine: number; cook: number; plant: number; tame: number; combat: number; medicine: number; craft: number }
   critter?: { speciesId: number; level: number; xp: number; bond: number; wild: boolean }
   bond?: { partnerEid: number; level: number }
+  traitId?: TraitId
+  combat?: { atk: number; def: number; satk: number; sdef: number; spd: number }
+  moves?: readonly string[]
 }
 
 const FACTION_NAME: Record<number, string> = {
@@ -104,6 +111,19 @@ export function SelectionPanel() {
           bond: Critter.bond[eid] ?? 0,
           wild: hasComponent(ecs, Wild, eid),
         }
+        const simFull = sim as unknown as SimWorld
+        const trait = simFull.traits?.get(eid)
+        if (trait) next.traitId = trait
+        next.moves = species?.movePool
+        if (hasComponent(ecs, CombatStats, eid)) {
+          next.combat = {
+            atk: CombatStats.atk[eid] ?? 0,
+            def: CombatStats.def[eid] ?? 0,
+            satk: CombatStats.satk[eid] ?? 0,
+            sdef: CombatStats.sdef[eid] ?? 0,
+            spd: CombatStats.spd[eid] ?? 0,
+          }
+        }
       }
       if (hasComponent(ecs, Bond, eid)) {
         next.bond = { partnerEid: Bond.partnerEid[eid] ?? 0, level: Bond.level[eid] ?? 0 }
@@ -171,6 +191,40 @@ export function SelectionPanel() {
         <div className="bond">Bonded to #{view.bond.partnerEid} · level {view.bond.level}</div>
       )}
 
+      {view.traitId && view.traitId !== 'none' && (
+        <div className="trait">
+          <span className="trait-label">Trait</span>
+          <strong>{traitById(view.traitId).label}</strong>
+          <span className="trait-desc">{traitById(view.traitId).description}</span>
+        </div>
+      )}
+
+      {view.combat && (
+        <div className="combat-stats">
+          <span className="cs"><span className="cs-l">ATK</span>{view.combat.atk}</span>
+          <span className="cs"><span className="cs-l">DEF</span>{view.combat.def}</span>
+          <span className="cs"><span className="cs-l">sATK</span>{view.combat.satk}</span>
+          <span className="cs"><span className="cs-l">sDEF</span>{view.combat.sdef}</span>
+          <span className="cs"><span className="cs-l">SPD</span>{view.combat.spd}</span>
+        </div>
+      )}
+
+      {view.moves && view.moves.length > 0 && (
+        <div className="moves-row">
+          <span className="moves-label">Moves</span>
+          {view.moves.map((mid) => {
+            const m = getMove(mid)
+            if (!m) return null
+            const color = TYPE_COLOR[m.type].toString(16).padStart(6, '0')
+            return (
+              <span key={mid} className="move-chip" style={{ borderColor: `#${color}` }} title={`${m.name} · ${TYPE_NAMES[m.type]} · pwr ${m.power} · acc ${m.accuracy}%`}>
+                {m.name}
+              </span>
+            )
+          })}
+        </div>
+      )}
+
       {view.skills && (
         <details className="skills-details">
           <summary>Skills</summary>
@@ -206,6 +260,15 @@ export function SelectionPanel() {
         .skill-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-top:6px; }
         .skill { display:flex; justify-content:space-between; padding:2px 6px; background:#0d1115; border-radius:4px; }
         .skill-val { color:var(--accent); }
+        .trait { display:flex; gap:6px; align-items:baseline; font-size:11px; }
+        .trait-label { color:var(--text-dim); }
+        .trait-desc { color:var(--text-dim); }
+        .combat-stats { display:flex; gap:8px; font-size:11px; color:var(--text); }
+        .combat-stats .cs { background:#0d1115; padding:2px 6px; border-radius:4px; display:flex; gap:4px; align-items:baseline; }
+        .combat-stats .cs-l { color:var(--text-dim); font-size:10px; }
+        .moves-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .moves-label { color:var(--text-dim); font-size:11px; }
+        .move-chip { padding:2px 6px; border:1px solid; border-radius:6px; font-size:11px; }
       `}</style>
     </div>
   )

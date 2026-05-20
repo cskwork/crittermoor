@@ -140,7 +140,9 @@ export function deserialize(input: SaveDoc): SimWorld {
         : spawnBlueprint(sim, kind, e.tile.tx, e.tile.ty)
       Structure.progress[newEid] = e.structure.progress
     } else if (e.critter) {
-      newEid = spawnCritter(sim, e.critter.speciesId, e.tile.tx, e.tile.ty, { level: e.critter.level })
+      // Pass traitId='none' so deserialize never burns rng on a re-roll;
+      // existing save fixtures from v3 carry no trait field anyway.
+      newEid = spawnCritter(sim, e.critter.speciesId, e.tile.tx, e.tile.ty, { level: e.critter.level, traitId: 'none' })
     } else {
       newEid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff)
     }

@@ -39,6 +39,10 @@ export interface SimWorld {
   // Tile-key set of stockpile tiles. Items dropped on these tiles are
   // considered stored; loose items elsewhere become Haul targets.
   stockpiles: Set<number>
+  // Per-critter trait roll (sparse: only critters get entries).
+  traits: Map<number, import('./Critters/traits').TraitId>
+  // Per-creature home anchor tile (for wild-AI v2 home-range behavior).
+  homeAnchors: Map<number, { tx: number; ty: number }>
 }
 
 export function createSimWorld(seed: number): SimWorld {
@@ -64,6 +68,8 @@ export function createSimWorld(seed: number): SimWorld {
     events: [],
     agency: createAgency(),
     stockpiles: new Set(),
+    traits: new Map(),
+    homeAnchors: new Map(),
   }
 }
 

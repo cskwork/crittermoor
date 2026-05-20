@@ -1,7 +1,7 @@
 {
   "version": 1,
   "createdAt": "2026-05-20T10:29:18.647Z",
-  "updatedAt": "2026-05-20T10:49:09.957Z",
+  "updatedAt": "2026-05-20T10:55:13.425Z",
   "briefPath": ".omc/ultragoal/brief.md",
   "goalsPath": ".omc/ultragoal/goals.json",
   "ledgerPath": ".omc/ultragoal/ledger.jsonl",
@@ -35,10 +35,13 @@
       "id": "G003-economic-depth",
       "title": "Economic depth",
       "objective": "Items on tiles + Stockpile zones + Haul job + Workstation bills (recipe queue with repeat-until-X stop rule) (CMR-034/035/036)",
-      "status": "pending",
-      "attempt": 0,
+      "status": "complete",
+      "attempt": 1,
       "createdAt": "2026-05-20T10:29:18.647Z",
-      "updatedAt": "2026-05-20T10:29:18.647Z"
+      "updatedAt": "2026-05-20T10:55:13.425Z",
+      "startedAt": "2026-05-20T10:55:13.261Z",
+      "completedAt": "2026-05-20T10:55:13.425Z",
+      "evidence": "Landed CMR-034 + CMR-035 in a00ea34. CMR-036 (workstation bills) deferred — requires cook system from CMR-041 (G006). 74/74 vitest (+4 haul tests). Lint zero warnings, typecheck strict clean, build 252 KB gzip JS. New modules src/game/Sim/Items/{defs,spawn}.ts + src/game/Sim/systems/haul.ts. Item + Carry components added; SimWorld.stockpiles Set<tileKey>; haul system runs every 6 ticks, picks nearest unreserved loose item, carries to nearest stockpile. EntityLayer renders Items as diamonds. New 'stockpile' tool (hotkey Z). Items not yet in SaveDoc — covered by F007."
     },
     {
       "id": "G004-creature-depth",
