@@ -1,48 +1,128 @@
+/* Design tokens.
+ * Spacing / radius / shadow scales kept small on purpose — the goal is one
+ * canonical button + panel look so every surface feels consistent.
+ */
 :root {
   color-scheme: dark light;
+  /* Color tokens */
   --bg: #14191e;
+  --bg-2: #0d1115;
   --panel: rgba(20, 25, 30, 0.85);
   --panel-border: rgba(255, 255, 255, 0.08);
+  --panel-border-strong: rgba(255, 255, 255, 0.16);
   --text: #e8ece8;
   --text-dim: #9aa39a;
+  --text-muted: #6e7672;
   --accent: #a8d08d;
+  --accent-dim: rgba(168, 208, 141, 0.16);
   --danger: #e07a5f;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --warn: #f0c674;
+  --link: #82c1ff;
+  --focus-ring: rgba(168, 208, 141, 0.85);
+
+  /* Spacing tokens */
+  --s-1: 4px;
+  --s-2: 6px;
+  --s-3: 8px;
+  --s-4: 12px;
+  --s-5: 16px;
+  --s-6: 24px;
+
+  /* Radius + shadow */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.35);
+
+  /* Typography */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-md: 13px;
+  --fs-lg: 16px;
+
+  font-family: var(--font-ui);
 }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 
 .app-root { position: relative; height: 100%; width: 100%; overflow: hidden; }
-.canvas-host { position: absolute; inset: 0; }
+.canvas-host { position: absolute; inset: 0; cursor: default; }
 .canvas-host canvas { display: block; image-rendering: pixelated; }
+
+/* Custom cursors per tool — give immediate feedback when a tool is armed. */
+.canvas-host.tool-select { cursor: default; }
+.canvas-host.tool-chop { cursor: crosshair; }
+.canvas-host.tool-mine { cursor: crosshair; }
+.canvas-host.tool-build { cursor: copy; }
+.canvas-host.tool-stockpile { cursor: cell; }
+.canvas-host.tool-farm { cursor: cell; }
+.canvas-host.tool-tame { cursor: help; }
+.canvas-host.tool-cancel { cursor: not-allowed; }
 
 .boot-overlay {
   position: absolute; inset: 0;
   display: grid; place-items: center;
   background: var(--bg); color: var(--text-dim);
-  font-size: 18px; letter-spacing: 0.04em;
+  font-size: var(--fs-lg); letter-spacing: 0.04em;
 }
 
 .panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
+  border-radius: var(--r-lg);
   backdrop-filter: blur(6px);
-  padding: 12px;
+  padding: var(--s-4);
+  box-shadow: var(--shadow-md);
 }
 
 button {
   background: var(--panel);
   color: var(--text);
   border: 1px solid var(--panel-border);
-  padding: 8px 14px;
-  border-radius: 6px;
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-md);
   cursor: pointer;
   font: inherit;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease;
 }
-button:hover { border-color: var(--accent); }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-dim); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+button.danger { border-color: var(--danger); color: var(--danger); }
+
+/* Tooltip primitive — used by a TS hook in src/ui/components/Tooltip.tsx. */
+.crit-tooltip {
+  position: fixed;
+  background: var(--bg-2);
+  border: 1px solid var(--panel-border-strong);
+  border-radius: var(--r-sm);
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  pointer-events: none;
+  z-index: 200;
+  max-width: 220px;
+  line-height: 1.4;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.crit-tooltip.visible { opacity: 1; }
+
+/* Mobile reflow — panels stack vertically and HUD shrinks below 800px wide. */
+@media (max-width: 800px) {
+  .hud-top { flex-wrap: wrap; gap: 8px !important; padding: 6px 10px !important; }
+  .hud-actions button, .speed-group button { padding: 6px 8px; font-size: var(--fs-sm); min-width: 0; }
+  .hud-help { font-size: var(--fs-xs) !important; padding: 4px 8px !important; max-width: 96% !important; }
+  .load-panel { min-width: 90% !important; }
+  .prio-root { right: 6px !important; min-width: 92% !important; max-width: 96vw !important; }
+  .selection-panel { min-width: 92% !important; max-width: 96vw !important; }
+  .toolbar { top: 64px !important; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

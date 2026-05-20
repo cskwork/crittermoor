@@ -3,6 +3,7 @@ import type { SimWorld } from '../world'
 import { sound } from '@/audio/SoundManager'
 import { defineQuery, hasComponent } from 'bitecs'
 import { Structure } from '../components'
+import { spawnVfx } from '@/game/vfxBridge'
 
 const MIN_DAYS_TO_FIRST_RAID = 3
 const MIN_INTERVAL_DAYS = 4
@@ -79,6 +80,7 @@ export function makeRaidSystem(hooks: RaidHooks) {
     const day = Math.floor(sim.tick / DAY_LENGTH_TICKS) + 1
     sim.events.push(`A hostile pack of ${team.length} approaches on day ${day}!`)
     sound.play('raid_alarm')
+    spawnVfx('raid', Math.floor(sim.map.width / 2), Math.floor(sim.map.height / 2))
     r.scheduled = false
     hooks.onRaid(team)
 

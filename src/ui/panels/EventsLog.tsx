@@ -20,7 +20,7 @@ export function EventsLog() {
   }, [events])
 
   return (
-    <div className="events panel" aria-label="Recent events">
+    <div className="events panel" aria-label="Recent events" role="log" aria-live="polite" aria-relevant="additions">
       <div className="header">Events</div>
       {events.length === 0 ? (
         <div className="empty">No events yet.</div>
