@@ -7,6 +7,7 @@ import {
   Critter,
   Faction as FactionComp,
   Health,
+  Mind,
   Needs,
   Pawn,
   Skills,
@@ -17,6 +18,7 @@ import { Faction } from '@/shared/constants'
 import { speciesById } from '@/game/Sim/Critters/species'
 import { TYPE_COLOR, TYPE_NAMES } from '@/game/Sim/Critters/types'
 import { Behavior } from '@/game/Sim/systems/behavior'
+import { traitLabel } from '@/game/Sim/systems/mind'
 import { traitById, type TraitId } from '@/game/Sim/Critters/traits'
 import { getMove } from '@/game/Sim/Battle/moves'
 import type { SimWorld } from '@/game/Sim/world'
@@ -29,6 +31,7 @@ interface EntityView {
   pos: { tx: number; ty: number }
   hp?: { hp: number; maxHp: number }
   needs?: { food: number; rest: number; joy: number; warmth: number }
+  mind?: { trait: number; mood: number }
   behavior?: Behavior
   skills?: { construct: number; mine: number; cook: number; plant: number; tame: number; combat: number; medicine: number; craft: number }
   critter?: { speciesId: number; level: number; xp: number; bond: number; wild: boolean }
@@ -91,6 +94,9 @@ export function SelectionPanel() {
         }
       }
       if (hasComponent(ecs, Pawn, eid)) next.behavior = Pawn.behavior[eid] as Behavior
+      if (hasComponent(ecs, Mind, eid)) {
+        next.mind = { trait: Mind.trait[eid] ?? 0, mood: Pawn.mood[eid] ?? 0 }
+      }
       if (hasComponent(ecs, Skills, eid)) {
         next.skills = {
           construct: Skills.construct[eid] ?? 0,
@@ -161,6 +167,15 @@ export function SelectionPanel() {
           <Need label="Rest" v={view.needs.rest} />
           <Need label="Joy" v={view.needs.joy} />
           <Need label="Warmth" v={view.needs.warmth} />
+        </div>
+      )}
+
+      {view.mind && (
+        <div className="mind-row">
+          <span className="label">Mood</span>
+          <Bar value={view.mind.mood + 100} max={200} color={moodColor(view.mind.mood)} />
+          <span className="num">{view.mind.mood}</span>
+          <span className="trait-chip" title="Personality trait">{traitLabel(view.mind.trait)}</span>
         </div>
       )}
 
@@ -250,6 +265,10 @@ export function SelectionPanel() {
         .row .num { color:var(--text-dim); font-size:11px; }
         .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; }
         .behavior { font-size:12px; color:var(--text-dim); }
+        .mind-row { display:flex; align-items:center; gap:8px; font-size:12px; }
+        .mind-row .label { width:42px; color:var(--text-dim); }
+        .mind-row .num { color:var(--text-dim); font-size:11px; width:30px; text-align:right; }
+        .trait-chip { padding:1px 7px; background:#0d1115; border-radius:10px; font-size:10px; color:var(--accent); }
         .critter-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim); }
         .types { display:flex; gap:4px; }
         .chip { padding:0 6px; border-radius:4px; color:#0d1115; font-weight:600; font-size:10px; }
@@ -272,6 +291,12 @@ export function SelectionPanel() {
       `}</style>
     </div>
   )
+}
+
+function moodColor(mood: number): string {
+  if (mood <= -50) return '#e07a5f' // distressed
+  if (mood <= -25) return '#f0c674' // stressed
+  return '#a8d08d' // content
 }
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {

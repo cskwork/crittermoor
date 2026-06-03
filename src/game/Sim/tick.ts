@@ -1,5 +1,6 @@
 import type { SimWorld } from './world'
 import { system_needs_decay } from './systems/needs'
+import { system_mind } from './systems/mind'
 import { system_time } from './systems/time'
 import { system_position_prev } from './systems/movement'
 import { system_path_follow } from './systems/pathFollow'
@@ -29,6 +30,7 @@ export function makeRunTick(hooks: SimHooks): (sim: SimWorld) => void {
     system_position_prev(sim)
     system_time(sim)
     system_needs_decay(sim)
+    system_mind(sim)
     system_pawn_behavior(sim)
     jobsSystem(sim)
     haulSystem(sim)
@@ -48,6 +50,7 @@ export function runTick(sim: SimWorld): void {
   system_position_prev(sim)
   system_time(sim)
   system_needs_decay(sim)
+  system_mind(sim)
   system_pawn_behavior(sim)
   system_wild_ai(sim)
   system_critter_follow(sim)

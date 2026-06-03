@@ -1,4 +1,4 @@
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 5
 
 export interface EntitySnapshot {
   eid: number
@@ -81,9 +81,20 @@ export interface EntityV4Snapshot extends EntitySnapshot {
   homeAnchor?: { tx: number; ty: number }
 }
 
-export type SaveDoc = SaveDocV1 | SaveDocV2 | SaveDocV3 | SaveDocV4
+export interface SaveDocV5 extends Omit<SaveDocV4, 'version' | 'entities'> {
+  version: 5
+  // v5 carries the same entity shape as v4 plus optional pawn psychology.
+  entities: EntityV5Snapshot[]
+}
 
-export type CurrentSaveDoc = SaveDocV4
+export interface EntityV5Snapshot extends EntityV4Snapshot {
+  // Pawn psychology: trait id (Trait enum) + current mood (-100..100).
+  mind?: { trait: number; mood: number }
+}
+
+export type SaveDoc = SaveDocV1 | SaveDocV2 | SaveDocV3 | SaveDocV4 | SaveDocV5
+
+export type CurrentSaveDoc = SaveDocV5
 
 export interface SaveMeta {
   slotId: string

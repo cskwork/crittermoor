@@ -62,6 +62,11 @@ export class Renderer {
     this.clickHandler = handler
   }
 
+  // Center the camera on a tile (used by the alert stack to jump to an entity).
+  focusOnTile(tx: number, ty: number): void {
+    this.camera?.centerOn((tx + 0.5) * TILE_SIZE, (ty + 0.5) * TILE_SIZE)
+  }
+
   attachWorld(sim: SimWorld): void {
     while (this.viewport.children.length > 0) {
       const c = this.viewport.children[0]!

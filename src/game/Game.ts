@@ -5,7 +5,7 @@ import { useUiStore } from '@/app/stores/uiStore'
 import { useBattleStore } from '@/app/stores/battleStore'
 import { generateWorld } from './Sim/Gen/worldGen'
 import { createPathClient, type PathClient } from './Sim/Pathing/PathClient'
-import { defineQuery, removeEntity } from 'bitecs'
+import { defineQuery, hasComponent, removeEntity } from 'bitecs'
 import { Faction as FactionComp, Position, Structure, TilePos } from './Sim/components'
 import { Faction, TICKS_PER_SECOND_1X, Terrain } from '@/shared/constants'
 import { makeRunTick } from './Sim/tick'
@@ -79,11 +79,18 @@ export class Game {
       __crittermoorApplyLoad: (loaded: SimWorld) => void
       __crittermoorPlayerEids: () => number[]
       __crittermoorVfx: (kind: 'chop' | 'mine' | 'build' | 'raid' | 'tame' | 'autosave', tx: number, ty: number) => void
+      __crittermoorFocus: (eid: number) => void
     }
     w.__crittermoorGame = { sim }
     w.__crittermoorApplyLoad = (loaded) => this.applyLoaded(loaded)
     w.__crittermoorPlayerEids = () => this.playerEids()
     w.__crittermoorVfx = (kind, tx, ty) => this.renderer.spawnVfx(kind, tx, ty)
+    // Alert stack → center camera on an entity and select it.
+    w.__crittermoorFocus = (eid) => {
+      if (!hasComponent(sim.ecs, TilePos, eid)) return
+      this.renderer.focusOnTile(TilePos.tx[eid] ?? 0, TilePos.ty[eid] ?? 0)
+      useUiStore.getState().setSelected(eid)
+    }
     ;(window as unknown as { __crittermoorTestBattle: () => void }).__crittermoorTestBattle = () =>
       this.startTestBattle()
 

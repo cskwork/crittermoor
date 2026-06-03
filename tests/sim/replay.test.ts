@@ -12,8 +12,8 @@ import { setDrafted, setPriority } from '@/game/Sim/agency'
 // history. Compare positions + RNG state + farms/stockpiles/resources instead.
 function stateHash(sim: SimWorld): number {
   const doc = serialize(sim)
-  // serialize always returns the current version (v4), so widen explicitly.
-  if (doc.version !== 4) throw new Error(`expected v4, got ${doc.version}`)
+  // serialize always returns the current version (v5), so widen explicitly.
+  if (doc.version !== 5) throw new Error(`expected v5, got ${doc.version}`)
   const entitySigs = doc.entities
     .map((e) => `${e.tile.tx}:${e.tile.ty}:${e.faction}:${e.critter?.speciesId ?? -1}:${e.structure?.kind ?? -1}:${e.structure?.state ?? -1}`)
     .sort()

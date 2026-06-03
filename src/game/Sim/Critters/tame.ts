@@ -12,6 +12,7 @@ import type { SimWorld } from '../world'
 import { sound } from '@/audio/SoundManager'
 import { onTame } from '@/achievements/trigger'
 import { spawnVfx } from '@/game/vfxBridge'
+import { applyThought } from '../systems/mind'
 
 const critterQuery = defineQuery([Critter, FactionComp, TilePos, Health])
 
@@ -50,6 +51,7 @@ export function tryTame(sim: SimWorld, wardenEid: number, tx: number, ty: number
   Bond.partnerEid[target] = wardenEid
   Bond.level[target] = 20
   sim.events.push(`Tamed a wild ${critterName(target)}!`)
+  applyThought(wardenEid, 'tamedCritter') // bonding with a critter is a real mood lift
   sound.play('critter_cry')
   spawnVfx('tame', TilePos.tx[target] ?? 0, TilePos.ty[target] ?? 0)
   onTame(Critter.speciesId[target] ?? 0)

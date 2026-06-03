@@ -12,6 +12,7 @@ import { dayOf, phaseOf } from '@/game/Sim/systems/time'
 import { Toolbar } from '@/ui/panels/Toolbar'
 import { SelectionPanel } from '@/ui/panels/SelectionPanel'
 import { EventsLog } from '@/ui/panels/EventsLog'
+import { AlertStack } from '@/ui/panels/AlertStack'
 import { Resources } from '@/ui/panels/Resources'
 import { onAutosaveRecovered } from '@/achievements/trigger'
 import { sound } from '@/audio/SoundManager'
@@ -159,12 +160,13 @@ export function HUD() {
       </div>
 
       <div className="hud-help panel" aria-label="Controls help">
-        Pick a tool · Left-click to act · Right-click to send wardens · Middle-drag / Shift-drag to pan · Wheel to zoom · Space = pause · 1/2/3 = speed
+        Pick a tool · Left-click to act · Right-click to send wardens · Middle-drag / Shift-drag to pan · Wheel to zoom · Touch: drag to pan, pinch to zoom · Space = pause · 1/2/3 = speed
       </div>
 
       <Toolbar />
       <Resources />
       <EventsLog />
+      <AlertStack />
       <SelectionPanel />
 
       {status && <div className="hud-status panel" role="status" aria-live="polite">{status}</div>}

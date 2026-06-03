@@ -7,6 +7,8 @@ export const Velocity = defineComponent({ vx: Types.f32, vy: Types.f32 })
 export const Renderable = defineComponent({ spriteId: Types.ui16, layer: Types.ui8, tint: Types.ui32 })
 
 export const Pawn = defineComponent({ flags: Types.ui8, mood: Types.i8, behavior: Types.ui8 })
+// Pawn psychology. trait shapes mood baseline + mental-break tolerance (see systems/mind.ts).
+export const Mind = defineComponent({ trait: Types.ui8 })
 export const Needs = defineComponent({ food: Types.ui8, rest: Types.ui8, joy: Types.ui8, warmth: Types.ui8 })
 export const Skills = defineComponent({
   construct: Types.ui8,

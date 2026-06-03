@@ -13,6 +13,12 @@ export class Camera {
   private dragStartY = 0
   private viewportStartX = 0
   private viewportStartY = 0
+  // Touch gesture state: single-finger pans, two fingers pinch-zoom. Coords are host-relative.
+  private touches = new Map<number, { x: number; y: number }>()
+  private touchPanning = false
+  private pinchLastDist = 0
+  private pinchLastMidX = 0
+  private pinchLastMidY = 0
   private readonly minZoom: number
   private readonly maxZoom: number
   private readonly zoomStep: number
@@ -30,6 +36,7 @@ export class Camera {
     this.host.removeEventListener('pointerup', this.onUp)
     this.host.removeEventListener('pointercancel', this.onUp)
     this.host.removeEventListener('wheel', this.onWheel)
+    this.touches.clear()
   }
 
   centerOn(x: number, y: number): void {
@@ -56,6 +63,11 @@ export class Camera {
   }
 
   private onDown = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') {
+      this.onTouchDown(e)
+      return
+    }
+    // Mouse/pen: middle, right, or shift+left drags. Plain left-click stays for tile selection.
     if (e.button !== 1 && e.button !== 2 && !(e.button === 0 && e.shiftKey)) return
     this.dragging = true
     this.dragStartX = e.clientX
@@ -66,6 +78,10 @@ export class Camera {
   }
 
   private onMove = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') {
+      this.onTouchMove(e)
+      return
+    }
     if (!this.dragging) return
     this.viewport.position.set(
       this.viewportStartX + (e.clientX - this.dragStartX),
@@ -74,9 +90,93 @@ export class Camera {
   }
 
   private onUp = (e: PointerEvent): void => {
+    if (e.pointerType === 'touch') {
+      this.onTouchUp(e)
+      return
+    }
     if (!this.dragging) return
     this.dragging = false
     if (this.host.hasPointerCapture(e.pointerId)) this.host.releasePointerCapture(e.pointerId)
+  }
+
+  private relative(e: PointerEvent): { x: number; y: number } {
+    const rect = this.host.getBoundingClientRect()
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  }
+
+  private onTouchDown(e: PointerEvent): void {
+    this.touches.set(e.pointerId, this.relative(e))
+    this.host.setPointerCapture(e.pointerId)
+    if (this.touches.size === 1) {
+      this.beginTouchPan(e.clientX, e.clientY)
+    } else if (this.touches.size === 2) {
+      this.touchPanning = false
+      this.pinchLastDist = 0 // first pinch move initializes the baseline
+    }
+  }
+
+  private onTouchMove(e: PointerEvent): void {
+    if (!this.touches.has(e.pointerId)) return
+    this.touches.set(e.pointerId, this.relative(e))
+    if (this.touches.size === 1 && this.touchPanning) {
+      this.viewport.position.set(
+        this.viewportStartX + (e.clientX - this.dragStartX),
+        this.viewportStartY + (e.clientY - this.dragStartY),
+      )
+    } else if (this.touches.size >= 2) {
+      this.updatePinch()
+    }
+  }
+
+  private onTouchUp(e: PointerEvent): void {
+    if (!this.touches.has(e.pointerId)) return
+    this.touches.delete(e.pointerId)
+    if (this.host.hasPointerCapture(e.pointerId)) this.host.releasePointerCapture(e.pointerId)
+    if (this.touches.size < 2) this.pinchLastDist = 0
+    if (this.touches.size === 1) {
+      // One finger left after a pinch: resume panning from its current position.
+      const rect = this.host.getBoundingClientRect()
+      const [p] = [...this.touches.values()]
+      this.beginTouchPan(p!.x + rect.left, p!.y + rect.top)
+    } else if (this.touches.size === 0) {
+      this.touchPanning = false
+    }
+  }
+
+  private beginTouchPan(clientX: number, clientY: number): void {
+    this.touchPanning = true
+    this.dragStartX = clientX
+    this.dragStartY = clientY
+    this.viewportStartX = this.viewport.position.x
+    this.viewportStartY = this.viewport.position.y
+  }
+
+  private updatePinch(): void {
+    const [a, b] = [...this.touches.values()]
+    if (!a || !b) return
+    const dist = Math.hypot(a.x - b.x, a.y - b.y)
+    const midX = (a.x + b.x) / 2
+    const midY = (a.y + b.y) / 2
+    if (this.pinchLastDist === 0) {
+      this.pinchLastDist = dist
+      this.pinchLastMidX = midX
+      this.pinchLastMidY = midY
+      return
+    }
+    const factor = dist / this.pinchLastDist
+    const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom * factor))
+    // Anchor the world point under the midpoint, then translate by the midpoint delta (two-finger pan).
+    const wx = (midX - this.viewport.position.x) / this.zoom
+    const wy = (midY - this.viewport.position.y) / this.zoom
+    this.zoom = newZoom
+    this.viewport.scale.set(this.zoom)
+    this.viewport.position.set(
+      midX - wx * this.zoom + (midX - this.pinchLastMidX),
+      midY - wy * this.zoom + (midY - this.pinchLastMidY),
+    )
+    this.pinchLastDist = dist
+    this.pinchLastMidX = midX
+    this.pinchLastMidY = midY
   }
 
   private onWheel = (e: WheelEvent): void => {

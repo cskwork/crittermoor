@@ -1,4 +1,4 @@
-import type { CurrentSaveDoc, EntityV4Snapshot, SaveDoc, SaveDocV1, SaveDocV2, SaveDocV3, SaveDocV4 } from './schema'
+import type { CurrentSaveDoc, EntityV4Snapshot, EntityV5Snapshot, SaveDoc, SaveDocV1, SaveDocV2, SaveDocV3, SaveDocV4, SaveDocV5 } from './schema'
 
 // Migration registry: each entry takes a save at version N and returns version N+1.
 // All migrations must be deterministic and lossless within their input scope.
@@ -8,7 +8,8 @@ export function migrateToCurrent(doc: SaveDoc): CurrentSaveDoc {
   if (cur.version === 1) cur = v1ToV2(cur)
   if (cur.version === 2) cur = v2ToV3(cur)
   if (cur.version === 3) cur = v3ToV4(cur)
-  if (cur.version === 4) return cur
+  if (cur.version === 4) cur = v4ToV5(cur)
+  if (cur.version === 5) return cur
   const v: number = (cur as { version: number }).version
   throw new Error(`unsupported save version after migration: ${v}`)
 }
@@ -43,5 +44,16 @@ function v3ToV4(v3: SaveDocV3): SaveDocV4 {
     factionDoorTiles: [],
     farms: [],
     items: [],
+  }
+}
+
+function v4ToV5(v4: SaveDocV4): SaveDocV5 {
+  // Additive: pawn `mind` is absent on v4 blobs. Wardens respawn with a freshly
+  // rolled trait and mood eases from needs; the next save fills mind in.
+  const entities: EntityV5Snapshot[] = v4.entities.map((e) => ({ ...e }))
+  return {
+    ...v4,
+    version: 5,
+    entities,
   }
 }

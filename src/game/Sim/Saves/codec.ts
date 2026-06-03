@@ -4,6 +4,7 @@ import {
   Critter,
   Faction as FactionComp,
   Health,
+  Mind,
   Needs,
   Pawn,
   Position,
@@ -14,7 +15,7 @@ import {
 } from '../components'
 import { Faction } from '@/shared/constants'
 import { createSimWorld, spawnWarden, type SimWorld } from '../world'
-import { SAVE_VERSION, SaveCorruptError, type EntityV4Snapshot, type SaveDoc } from './schema'
+import { SAVE_VERSION, SaveCorruptError, type EntityV5Snapshot, type SaveDoc } from './schema'
 import { migrateToCurrent } from './migrations'
 import { crc32String } from './crc32'
 import { spawnCritter } from '../Critters/spawn'
@@ -30,11 +31,11 @@ const allQuery = defineQuery([Position, TilePos, FactionComp])
 const itemQuery = defineQuery([Item, TilePos])
 
 export function serialize(sim: SimWorld): SaveDoc {
-  const entities: EntityV4Snapshot[] = []
+  const entities: EntityV5Snapshot[] = []
   const eids = allQuery(sim.ecs)
   for (let i = 0; i < eids.length; i++) {
     const eid = eids[i]!
-    const snap: EntityV4Snapshot = {
+    const snap: EntityV5Snapshot = {
       eid,
       pos: { x: Position.x[eid]!, y: Position.y[eid]! },
       tile: { tx: TilePos.tx[eid]!, ty: TilePos.ty[eid]! },
@@ -79,7 +80,10 @@ export function serialize(sim: SimWorld): SaveDoc {
         progress: Structure.progress[eid]!,
       }
     }
-    void Pawn
+    // v5: pawn psychology (trait + mood). Only pawns carry Mind.
+    if (hasComponent(sim.ecs, Mind, eid)) {
+      snap.mind = { trait: Mind.trait[eid]!, mood: Pawn.mood[eid]! }
+    }
     // v4 additions: per-critter trait + home anchor.
     const trait = sim.traits.get(eid)
     if (trait && trait !== 'none') snap.trait = trait
@@ -182,7 +186,9 @@ export function deserialize(input: SaveDoc): SimWorld {
       const home = (e as { homeAnchor?: { tx: number; ty: number } }).homeAnchor
       if (home) sim.homeAnchors.set(newEid, home)
     } else {
-      newEid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff)
+      // Pass the persisted trait so spawnWarden doesn't re-roll (keeps mind stable).
+      newEid = spawnWarden(sim, e.tile.tx, e.tile.ty, e.renderable?.tint ?? 0xffffff, e.mind?.trait)
+      if (e.mind) Pawn.mood[newEid] = e.mind.mood
     }
     eidRemap.set(e.eid, newEid)
     if (e.needs) {

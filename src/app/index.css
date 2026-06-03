@@ -48,7 +48,8 @@
 html, body, #root { height: 100%; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
 
 .app-root { position: relative; height: 100%; width: 100%; overflow: hidden; }
-.canvas-host { position: absolute; inset: 0; cursor: default; }
+/* touch-action: none lets the camera own all touch gestures (pan/pinch) instead of the browser. */
+.canvas-host { position: absolute; inset: 0; cursor: default; touch-action: none; overscroll-behavior: none; }
 .canvas-host canvas { display: block; image-rendering: pixelated; }
 
 /* Custom cursors per tool — give immediate feedback when a tool is armed. */

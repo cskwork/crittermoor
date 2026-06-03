@@ -1,10 +1,11 @@
 import { addComponent, addEntity, createWorld, type IWorld } from 'bitecs'
 import { createRng, type Rng } from '@/shared/rng'
 import { MAP_DEFAULT_H, MAP_DEFAULT_W, Terrain } from '@/shared/constants'
-import { Faction as FactionComp, HasPath, Health, Needs, Pawn, Position, PositionPrev, Renderable, Skills, TilePos } from './components'
+import { Faction as FactionComp, HasPath, Health, Mind, Needs, Pawn, Position, PositionPrev, Renderable, Skills, TilePos } from './components'
 import { Faction } from '@/shared/constants'
 import { PathStorage } from './Pathing/PathStorage'
 import { createAgency, type AgencyState } from './agency'
+import { rollTrait } from './systems/mind'
 
 export interface TileMap {
   width: number
@@ -91,13 +92,17 @@ export function destroyWorld(sim: SimWorld): void {
   handle.ecs = null
 }
 
-export function spawnWarden(sim: SimWorld, tx: number, ty: number, tint = 0xe8ece8): number {
+export function spawnWarden(sim: SimWorld, tx: number, ty: number, tint = 0xe8ece8, traitId?: number): number {
   const eid = addEntity(sim.ecs)
   addComponent(sim.ecs, Position, eid)
   addComponent(sim.ecs, PositionPrev, eid)
   addComponent(sim.ecs, TilePos, eid)
   addComponent(sim.ecs, Renderable, eid)
   addComponent(sim.ecs, Pawn, eid)
+  addComponent(sim.ecs, Mind, eid)
+  // Restored saves pass the persisted trait; fresh spawns roll deterministically
+  // from (seed, eid) so worldgen's shared RNG stream is untouched.
+  Mind.trait[eid] = traitId ?? rollTrait(sim.seed, eid)
   addComponent(sim.ecs, Needs, eid)
   addComponent(sim.ecs, Skills, eid)
   addComponent(sim.ecs, Health, eid)
