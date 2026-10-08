@@ -101,4 +101,4 @@ npm test
 
 If anything fails, fix it. Do not skip or remove tests. Only after both pass, summarize what you produced in under 8 lines.
 
-The repo is at `/Users/danny/Documents/PARA/Resource/vibe-tycoon`.
+The repo is at `~/Documents/PARA/Resource/vibe-tycoon`.

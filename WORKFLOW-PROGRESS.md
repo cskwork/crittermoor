@@ -1,7 +1,7 @@
 # Symphony Progress
 _Updated: 2026-05-19 22:29:34 UTC_
 
-_Workflow: /Users/danny/Documents/PARA/Resource/crittermoor/WORKFLOW.md_
+_Workflow: /Users/<user>/Documents/PARA/Resource/crittermoor/WORKFLOW.md_
 
 _Board viewer:_ [http://127.0.0.1:8765/](http://127.0.0.1:8765/)
 
